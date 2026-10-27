@@ -221,8 +221,8 @@ body.revving .speed-lines { animation: speed .7s ease-out; }
 
 /* ------------------------------------------------------------------ état vide */
 .empty { text-align: center; padding: 80px 20px; color: var(--muted); }
-.empty-flag { font-size: 64px; animation: wave 2s ease-in-out infinite; display: inline-block; transform-origin: bottom left; }
-@keyframes wave { 50% { transform: rotate(-12deg); } }
+.empty-flag { font-size: 64px; animation: float 2.4s ease-in-out infinite; display: inline-block; }
+@keyframes float { 50% { transform: translateY(-8px); } }
 .empty h2 { font: 900 28px var(--font-display); color: var(--text); letter-spacing: .08em; }
 
 /* ------------------------------------------------------------------ boutons */

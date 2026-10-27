@@ -236,11 +236,21 @@ function render() {
   const empty = $("#empty");
   empty.hidden = list.length > 0;
   if (!list.length) {
+    // Textes et pictogrammes neutres : seul le « dossier vide » suit l'ambiance du thème.
     const none = shownApps().length === 0 && state.filter !== "hidden";
-    $("#empty-title").textContent = none ? flavor().emptyTitle : "Aucune machine trouvée";
-    $("#empty-text").innerHTML = none
-      ? `Déposez vos applis <code>.html</code> ou <code>.exe</code> dans<br><code>${esc(state.appsDir)}</code>`
-      : "Essayez une autre recherche ou un autre filtre.";
+    const searching = state.query.trim() !== "";
+    const [icon, title, text] = none
+      ? ["📂", flavor().emptyTitle, `Déposez vos applis <code>.html</code> ou <code>.exe</code> dans<br><code>${esc(state.appsDir)}</code>`]
+      : searching
+        ? ["🔎", "Aucun résultat", "Essayez une autre recherche ou un autre filtre."]
+        : state.filter === "fav"
+          ? ["☆", "Aucun favori", "Cliquez sur ☆ au bas d'une carte, ou touche <kbd>F</kbd>, pour l'épingler ici."]
+          : state.filter === "hidden"
+            ? ["👁", "Aucune appli masquée", "Une appli masquée apparaît ici, grisée."]
+            : ["🔎", "Aucun résultat", "Aucune appli ne correspond à ce filtre."];
+    $("#empty-icon").textContent = icon;
+    $("#empty-title").textContent = title;
+    $("#empty-text").innerHTML = text;
     $("#empty-open").hidden = !none;
   }
   if (state.detail) {

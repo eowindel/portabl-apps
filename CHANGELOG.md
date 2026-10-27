@@ -3,6 +3,11 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.2] - 2026-10-27
+
+### Corrigé
+- Les écrans « rien à afficher » (aucun favori, aucun résultat, aucune appli masquée) ont un texte et un pictogramme neutres, plus de drapeau à damier hors thème.
+
 ## [0.5.1] - 2026-10-27
 
 ### Modifié
