@@ -3,6 +3,11 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.6.1] - 2026-10-27
+
+### Modifié
+- Le pied de page « © 2026 casarou · Licence MIT » reste collé en bas de la fenêtre, au lieu de flotter sous les cartes quand il y a peu d'applis.
+
 ## [0.6.0] - 2026-10-27
 
 ### Ajouté
