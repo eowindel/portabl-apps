@@ -39,6 +39,16 @@ Par ordre de priorité :
    et `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
 3. **Infos de version de l'exe** : description, version, société, commentaires + icône.
 
+### Skill Claude Code
+
+`skills/portabl-apps-meta/` est un skill Claude Code qui renseigne ces infos au bon endroit dans vos autres projets (balises HTML, ressources de l'exe, `.portal.json`). Il fournit aussi `check.mjs`, qui affiche la carte telle que le lanceur la verra :
+
+```bash
+node skills/portabl-apps-meta/check.mjs chemin/vers/appli.html
+```
+
+Pour l'utiliser dans tous vos projets, copiez le dossier dans `%USERPROFILE%\.claude\skills\` (à refaire après chaque modification du skill ou des règles de détection de `scan.rs`).
+
 ## Développement
 
 Prérequis : Node.js, Rust (`rustup`), MSVC Build Tools.
