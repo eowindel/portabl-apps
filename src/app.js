@@ -1,0 +1,914 @@
+"use strict";
+
+const THEMES = [
+  { id: "arcade", name: "Néon Arcade", swatch: "linear-gradient(180deg,#1d0a3a 0 50%,#ff2bd6 50% 60%,#00f0ff 60% 70%,#0b0614 70%)" },
+  { id: "superbike", name: "Superbike", swatch: "repeating-linear-gradient(90deg,#ff2a2a 0 18px,#f4f4f4 18px 36px) bottom/100% 10px no-repeat,#141417" },
+  { id: "enduro", name: "Enduro", swatch: "linear-gradient(135deg,#2a2216 0 55%,#ff7a00 55% 75%,#c6ff00 75%)" },
+  { id: "pixel", name: "8-bit", swatch: "repeating-linear-gradient(0deg,#040904 0 2px,#0b1f0b 2px 4px)" },
+  {
+    id: "lol", name: "Hextech", swatch: "linear-gradient(135deg,#091428 0 55%,#c8aa6e 55% 68%,#0ac8b9 68%)",
+    flavor: {
+      tagline: "faille de l'invocateur",
+      search: "Chercher un champion…",
+      gauges: ["champions", "kills aujourd'hui", "CS total"],
+      fav: "★ Mains",
+      unit: ["CS", "CS"],
+      never: "jamais pick",
+      emptyTitle: "Bienvenue dans la Faille",
+      sound: "chime",
+      welcome: "Bienvenue dans la Faille de l'invocateur !",
+      go: lolAnnouncer,
+    },
+  },
+  {
+    id: "sommet", name: "Sommet", swatch: "linear-gradient(160deg,#1b4f80 0 45%,#e3edf5 45% 52%,#263d55 52% 75%,#ffd23f 75%)",
+    flavor: {
+      tagline: "refuge d'applis",
+      search: "Chercher un itinéraire…",
+      gauges: ["itinéraires", "sorties aujourd'hui", "sommets gravis"],
+      fav: "⛰ Incontournables",
+      unit: ["sortie", "sorties"],
+      never: "jamais parcourue",
+      emptyTitle: "Refuge vide",
+      sound: "cowbell",
+      welcome: "Salut l'ami ! Bonne rando 🥾",
+      number: (n) => `${(1000 + n * 263).toLocaleString("fr-FR")} m`,
+      go: summitGuide,
+    },
+  },
+];
+
+// Textes et sons propres à chaque thème ; un thème ne redéfinit que ce qu'il veut.
+const DEFAULT_FLAVOR = {
+  tagline: "garage d'applis",
+  search: "Rechercher une machine…",
+  gauges: ["machines", "tours aujourd'hui", "tours au total"],
+  fav: "★ Favoris",
+  unit: ["tour", "tours"],
+  never: "jamais lancée",
+  emptyTitle: "Garage vide",
+  sound: "vroom",
+  welcome: "",
+  number: (n) => String(n).padStart(2, "0"),
+  go: (app) => ({ text: `GO ! ${app.name}` }),
+};
+const flavor = () => ({ ...DEFAULT_FLAVOR, ...THEMES.find((t) => t.id === document.documentElement.dataset.theme)?.flavor });
+
+// Annonceur de la Faille : lancer plusieurs applis à moins de 10 s d'intervalle enchaîne les multikills.
+const killStreak = { count: 0, last: 0, firstBlood: false };
+function lolAnnouncer(app) {
+  const now = Date.now();
+  killStreak.count = now - killStreak.last < 10_000 ? killStreak.count + 1 : 1;
+  killStreak.last = now;
+  if (!killStreak.firstBlood) {
+    killStreak.firstBlood = true;
+    return { text: "First Blood !", kill: true };
+  }
+  const multi = [null, null, "Double Kill !", "Triple Kill !", "Quadra Kill !"][killStreak.count];
+  if (killStreak.count >= 5) return { text: "PENTAKILL !!", kill: true };
+  if (multi) return { text: multi, kill: true };
+  return { text: `${app.name} — ennemi abattu` };
+}
+
+// Guide de haute montagne : chaque lancement ajoute du dénivelé, avec quelques paliers mythiques.
+const ascent = { dPlus: 0 };
+const SUMMITS = [
+  [1000, "Premier refuge atteint ⛺ Une myrtille ?"],
+  [2000, "Lac d'altitude en vue 💧 Trop froid pour s'y baigner (ou pas)"],
+  [3835, "Refuge du Goûter (3 835 m) — tu avais bien réservé ?"],
+  [4805, "MONT BLANC ! 4 805 m… ou 4 808, selon la dernière mesure"],
+  [8849, "EVEREST ! 8 849 m, sans oxygène, respect 🫡"],
+];
+function summitGuide(app) {
+  const before = ascent.dPlus;
+  ascent.dPlus += 150 + Math.round(Math.random() * 45) * 10;
+  const passed = SUMMITS.filter(([alt]) => before < alt && ascent.dPlus >= alt).pop();
+  const hour = new Date().getHours();
+  const frontale = hour >= 21 || hour < 5 ? " — n'oublie pas la frontale 🔦" : "";
+  if (passed) return { text: passed[1], kill: true };
+  return { text: `${app.name} · +${ascent.dPlus - before} m D+${frontale}` };
+}
+
+// Moment de la journée, pour les thèmes dont le ciel suit l'heure.
+function setDaypart() {
+  const h = new Date().getHours();
+  const part = h < 5 ? "night" : h < 9 ? "dawn" : h < 18 ? "day" : h < 21 ? "dusk" : "night";
+  document.documentElement.dataset.daypart = part;
+}
+setDaypart();
+setInterval(setDaypart, 10 * 60_000);
+
+// ------------------------------------------------------------------ accès au backend
+// Hors de Tauri (aperçu dans un navigateur), on simule le backend pour pouvoir travailler le design.
+const api = window.__TAURI__ ? {
+  load: () => window.__TAURI__.core.invoke("load"),
+  updatePrefs: (prefs) => window.__TAURI__.core.invoke("update_prefs", { prefs }),
+  toggleFavorite: (id) => window.__TAURI__.core.invoke("toggle_favorite", { id }),
+  launch: (app) => window.__TAURI__.core.invoke("launch", { id: app.id, path: app.path }),
+  reveal: (app) => window.__TAURI__.core.invoke("reveal", { path: app.path }),
+  openAppsDir: () => window.__TAURI__.core.invoke("open_apps_dir"),
+  pickFolder: () => window.__TAURI__.core.invoke("pick_folder"),
+  about: () => window.__TAURI__.core.invoke("about"),
+} : mockApi();
+
+// ------------------------------------------------------------------ état
+const state = {
+  apps: [],
+  settings: { favorites: [], stats: {} },
+  appsDir: "",
+  filter: "all",
+  query: "",
+  sort: store("sort") || "recent",
+  signature: "",
+  detail: null,
+};
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const grid = $("#grid");
+
+function store(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem("portabl." + key);
+    localStorage.setItem("portabl." + key, value);
+  } catch { /* stockage indisponible : sans importance */ }
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function hue(str) {
+  let h = 0;
+  for (const ch of str) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h % 360;
+}
+const colorOf = (app) => app.color || `hsl(${hue(app.name)} 90% 62%)`;
+const isFav = (app) => state.settings.favorites.includes(app.id);
+const statOf = (app) => state.settings.stats[app.id] || { count: 0, last: 0 };
+
+const rtf = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });
+function ago(ms) {
+  if (!ms) return "jamais lancée";
+  const s = (ms - Date.now()) / 1000;
+  const steps = [[60, "second"], [60, "minute"], [24, "hour"], [7, "day"], [4.35, "week"], [12, "month"], [Infinity, "year"]];
+  let v = s;
+  for (const [n, unit] of steps) {
+    if (Math.abs(v) < n) return rtf.format(Math.round(v), unit);
+    v /= n;
+  }
+}
+const fmtSize = (b) => b > 1 << 20 ? (b / (1 << 20)).toFixed(1) + " Mo" : Math.max(1, Math.round(b / 1024)) + " Ko";
+const fmtDate = (ms) => ms ? new Date(ms).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—";
+
+function iconHtml(app) {
+  const icon = app.icon || "";
+  if (icon.startsWith("data:")) return `<div class="app-icon"><img src="${esc(icon)}" alt=""></div>`;
+  if (icon) return `<div class="app-icon emoji">${esc(icon)}</div>`;
+  const initials = app.name.split(/[\s_\-.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  return `<div class="app-icon">${esc(initials || "?")}</div>`;
+}
+
+// ------------------------------------------------------------------ chargement
+async function load({ quiet = false } = {}) {
+  try {
+    const snap = await api.load();
+    state.settings = snap.settings;
+    state.appsDir = snap.appsDir;
+    applyTheme(snap.settings.theme);
+    const signature = JSON.stringify(snap.apps.map((a) => [a.id, a.modified, a.name]));
+    if (quiet && signature === state.signature) return;
+    state.signature = signature;
+    state.apps = snap.apps;
+    render();
+  } catch (e) {
+    toast(String(e), true);
+  }
+}
+
+function applyTheme(id) {
+  const next = THEMES.some((t) => t.id === id) ? id : "arcade";
+  const changed = document.documentElement.dataset.theme !== next || !state.themeApplied;
+  if (!changed) return;
+  state.themeApplied = true;
+  document.documentElement.dataset.theme = next;
+  const f = flavor();
+  $(".tagline").textContent = f.tagline;
+  search.placeholder = f.search;
+  document.querySelectorAll(".gauge-lbl").forEach((el, i) => { el.textContent = f.gauges[i]; });
+  if (state.apps.length) render();
+  if (f.welcome) toast(f.welcome);
+}
+
+// ------------------------------------------------------------------ rendu
+function visibleApps() {
+  const q = norm(state.query).trim();
+  const words = q.split(/\s+/).filter(Boolean);
+  let list = state.apps.filter((a) => {
+    if (state.filter === "fav" && !isFav(a)) return false;
+    if (state.filter === "html" && a.kind !== "html") return false;
+    if (state.filter === "exe" && a.kind !== "exe") return false;
+    if (state.filter.startsWith("cat:") && a.category !== state.filter.slice(4)) return false;
+    if (!words.length) return true;
+    const hay = norm([a.name, a.description, a.category, a.author, a.tags.join(" "), a.id].join(" "));
+    return words.every((w) => hay.includes(w));
+  });
+  const by = {
+    recent: (a, b) => statOf(b).last - statOf(a).last,
+    laps: (a, b) => statOf(b).count - statOf(a).count,
+    modified: (a, b) => b.modified - a.modified,
+    name: () => 0,
+  }[state.sort];
+  list = list.slice().sort((a, b) =>
+    (isFav(b) - isFav(a)) || by(a, b) || a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
+  return list;
+}
+
+function render() {
+  renderGauges();
+  renderFilters();
+  const list = visibleApps();
+  grid.innerHTML = list.map((app, i) => cardHtml(app, i)).join("");
+  const empty = $("#empty");
+  empty.hidden = list.length > 0;
+  if (!list.length) {
+    const none = state.apps.length === 0;
+    $("#empty-title").textContent = none ? flavor().emptyTitle : "Aucune machine trouvée";
+    $("#empty-text").innerHTML = none
+      ? `Déposez vos applis <code>.html</code> ou <code>.exe</code> dans<br><code>${esc(state.appsDir)}</code>`
+      : "Essayez une autre recherche ou un autre filtre.";
+    $("#empty-open").hidden = !none;
+  }
+  if (state.detail) {
+    const fresh = state.apps.find((a) => a.id === state.detail);
+    fresh ? renderDrawer(fresh) : closeDrawer();
+  }
+}
+
+function cardHtml(app, i) {
+  const stat = statOf(app);
+  const fav = isFav(app);
+  const f = flavor();
+  const num = f.number(state.apps.indexOf(app) + 1);
+  return `
+  <article class="card" tabindex="0" data-id="${esc(app.id)}" style="--c:${esc(colorOf(app))};animation-delay:${Math.min(i, 20) * 35}ms">
+    <div class="card-btns">
+      <button class="mini ${fav ? "on" : ""}" data-act="fav" title="Favori (F)">${fav ? "★" : "☆"}</button>
+      <button class="mini" data-act="info" title="Détails (I)">ⓘ</button>
+    </div>
+    <div class="card-head">
+      ${iconHtml(app)}
+      <div class="card-title">
+        <h3 title="${esc(app.name)}">${esc(app.name)}</h3>
+        <div class="meta-line">
+          <span class="badge ${app.kind}">${app.kind}</span>
+          ${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}
+          ${app.category ? `<span>· ${esc(app.category)}</span>` : ""}
+        </div>
+      </div>
+    </div>
+    ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
+    ${app.tags.length ? `<div class="tags">${app.tags.slice(0, 5).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
+    <div class="card-foot">
+      <span class="laps">🏁 <b>${stat.count}</b> ${esc(f.unit[stat.count > 1 ? 1 : 0])}</span>
+      <span>${esc(stat.last ? ago(stat.last) : f.never)}</span>
+    </div>
+    <span class="race-number">${num}</span>
+  </article>`;
+}
+
+function renderGauges() {
+  const stats = Object.values(state.settings.stats);
+  const dayStart = new Date().setHours(0, 0, 0, 0);
+  // Approximation volontaire : on ne garde que la date du dernier tour, donc « aujourd'hui » = applis lancées aujourd'hui.
+  animateNumber($("#g-apps"), state.apps.length);
+  animateNumber($("#g-today"), stats.filter((s) => s.last >= dayStart).length);
+  animateNumber($("#g-total"), stats.reduce((n, s) => n + s.count, 0));
+}
+
+function animateNumber(el, to) {
+  const from = Number(el.textContent) || 0;
+  if (from === to) return;
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 500);
+    el.textContent = Math.round(from + (to - from) * (1 - (1 - k) ** 3));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function renderFilters() {
+  const count = (f) => state.apps.filter(f).length;
+  const cats = [...new Set(state.apps.map((a) => a.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  const chips = [
+    ["all", "Tout", state.apps.length],
+    ["fav", flavor().fav, count(isFav)],
+    ["html", "HTML", count((a) => a.kind === "html")],
+    ["exe", "EXE", count((a) => a.kind === "exe")],
+    ...cats.map((c) => ["cat:" + c, c, count((a) => a.category === c)]),
+  ];
+  if (!chips.some(([id]) => id === state.filter)) state.filter = "all";
+  $("#filters").innerHTML = chips
+    .filter(([id, , n]) => n > 0 || id === "all" || id === "fav")
+    .map(([id, label, n]) => `<button class="chip ${state.filter === id ? "active" : ""}" data-filter="${esc(id)}">${esc(label)}<span class="n">${n}</span></button>`)
+    .join("");
+}
+
+// ------------------------------------------------------------------ actions
+const appById = (id) => state.apps.find((a) => a.id === id);
+
+async function launch(app, card) {
+  card ??= grid.querySelector(`[data-id="${CSS.escape(app.id)}"]`);
+  try {
+    state.settings = await api.launch(app);
+  } catch (e) {
+    toast(String(e), true);
+    return;
+  }
+  const f = flavor();
+  if (state.settings.sound) ({ chime, cowbell }[f.sound] || vroom)();
+  document.body.classList.remove("revving");
+  void document.body.offsetWidth;
+  document.body.classList.add("revving");
+  setTimeout(() => document.body.classList.remove("revving"), 800);
+  if (card) {
+    card.classList.remove("launch");
+    void card.offsetWidth;
+    card.classList.add("launch");
+    card.addEventListener("animationend", () => { card.classList.remove("launch"); refreshCard(app); }, { once: true });
+  }
+  renderGauges();
+  const msg = f.go(app);
+  toast(msg.text, false, msg.kill ? "kill" : "");
+}
+
+function refreshCard(app) {
+  const card = grid.querySelector(`[data-id="${CSS.escape(app.id)}"]`);
+  if (!card) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = cardHtml(app, 0);
+  const fresh = tmp.firstElementChild;
+  fresh.style.animation = "none";
+  const focused = document.activeElement === card;
+  card.replaceWith(fresh);
+  if (focused) fresh.focus();
+}
+
+async function toggleFav(app) {
+  try {
+    state.settings = await api.toggleFavorite(app.id);
+  } catch (e) {
+    return toast(String(e), true);
+  }
+  renderFilters();
+  if (state.filter === "fav") render(); else refreshCard(app);
+  if (state.detail === app.id) renderDrawer(app);
+}
+
+let toastTimer;
+function toast(msg, error = false, extra = "") {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = `toast show ${error ? "error" : ""} ${extra}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), error ? 4000 : 1800);
+}
+
+// Cloche de vache : deux ondes carrées dissonantes filtrées, façon cloche d'alpage.
+function cowbell() {
+  try {
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    for (const delay of [0, 0.32]) {
+      const bp = audio.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 2600;
+      bp.Q.value = 1.2;
+      const g = audio.createGain();
+      g.gain.setValueAtTime(0.0001, t + delay);
+      g.gain.exponentialRampToValueAtTime(0.25, t + delay + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.5);
+      bp.connect(g).connect(audio.destination);
+      for (const freq of [540, 800]) {
+        const o = audio.createOscillator();
+        o.type = "square";
+        o.frequency.value = freq;
+        o.connect(bp);
+        o.start(t + delay);
+        o.stop(t + delay + 0.55);
+      }
+    }
+  } catch { /* pas d'audio : tant pis */ }
+}
+
+// Sifflement d'alerte de la marmotte : une note aiguë qui glisse vers le bas.
+function whistle() {
+  try {
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(3200, t);
+    o.frequency.exponentialRampToValueAtTime(2200, t + 0.35);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    o.connect(g).connect(audio.destination);
+    o.start(t);
+    o.stop(t + 0.42);
+  } catch { /* pas d'audio : tant pis */ }
+}
+
+// Carillon « hextech » : petit arpège cristallin à la place du moteur.
+function chime() {
+  try {
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    [659.25, 987.77, 1318.5, 1975.5].forEach((freq, i) => {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      const start = t + i * 0.07;
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.6);
+      o.connect(g).connect(audio.destination);
+      o.start(start);
+      o.stop(start + 0.65);
+    });
+  } catch { /* pas d'audio : tant pis */ }
+}
+
+// Bruit de moteur synthétisé (aucun fichier audio nécessaire).
+let audio;
+function vroom() {
+  try {
+    audio ??= new AudioContext();
+    const t = audio.currentTime;
+    const out = audio.createGain();
+    out.gain.setValueAtTime(0.0001, t);
+    out.gain.exponentialRampToValueAtTime(0.18, t + 0.05);
+    out.gain.setValueAtTime(0.18, t + 0.45);
+    out.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+    const lp = audio.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(600, t);
+    lp.frequency.linearRampToValueAtTime(1800, t + 0.45);
+    lp.connect(out).connect(audio.destination);
+    for (const [type, mul, detune] of [["sawtooth", 1, 0], ["square", 0.5, 8]]) {
+      const o = audio.createOscillator();
+      o.type = type;
+      o.detune.value = detune;
+      o.frequency.setValueAtTime(55 * mul, t);
+      o.frequency.exponentialRampToValueAtTime(70 * mul, t + 0.12);   // ralenti
+      o.frequency.exponentialRampToValueAtTime(240 * mul, t + 0.45);  // coup de gaz
+      o.frequency.exponentialRampToValueAtTime(90 * mul, t + 0.9);    // retombée
+      // petit trémolo façon bicylindre
+      const lfo = audio.createOscillator();
+      const lfoGain = audio.createGain();
+      lfo.frequency.value = 28;
+      lfoGain.gain.value = 0.35;
+      const g = audio.createGain();
+      g.gain.value = 0.6;
+      lfo.connect(lfoGain).connect(g.gain);
+      o.connect(g).connect(lp);
+      o.start(t); lfo.start(t);
+      o.stop(t + 0.95); lfo.stop(t + 0.95);
+    }
+  } catch { /* pas d'audio : tant pis */ }
+}
+
+// ------------------------------------------------------------------ fiche détaillée
+function openDrawer(app) {
+  state.detail = app.id;
+  renderDrawer(app);
+  $("#drawer").classList.add("open");
+  $("#drawer").setAttribute("aria-hidden", "false");
+}
+
+function closeDrawer() {
+  state.detail = null;
+  $("#drawer").classList.remove("open");
+  $("#drawer").setAttribute("aria-hidden", "true");
+}
+
+function renderDrawer(app) {
+  const stat = statOf(app);
+  const sources = { sidecar: "fichier .portal.json", html: "balises du HTML", exe: "infos de version de l'exe" };
+  const facts = [
+    ["Version", app.version],
+    ["Auteur", app.author],
+    ["Catégorie", app.category],
+    ["Tags", app.tags.join(", ")],
+    ["Tours", `${stat.count} — dernier : ${ago(stat.last)}`],
+    ["Modifiée", fmtDate(app.modified)],
+    ["Taille", fmtSize(app.size)],
+    ["Fichier", app.path],
+    ["Infos lues", app.sources.map((s) => sources[s] || s).join(", ") || "nom du fichier uniquement"],
+  ].filter(([, v]) => v);
+  $("#drawer-body").innerHTML = `
+    <div style="--c:${esc(colorOf(app))}">${iconHtml(app)}</div>
+    <h2>${esc(app.name)}</h2>
+    <div class="meta-line"><span class="badge ${app.kind}">${app.kind}</span>${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}</div>
+    ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
+    <div class="drawer-actions">
+      <button class="btn primary" data-dact="launch">▶ Lancer</button>
+      <button class="btn" data-dact="fav">${isFav(app) ? "★ Favori" : "☆ Favori"}</button>
+      <button class="btn" data-dact="reveal" title="Afficher dans l'explorateur">📂</button>
+    </div>
+    <dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    ${app.notes ? `<div class="notes">${esc(app.notes)}</div>` : ""}`;
+}
+
+$("#drawer").addEventListener("click", async (e) => {
+  if (e.target.closest("[data-close]")) return closeDrawer();
+  const act = e.target.closest("[data-dact]")?.dataset.dact;
+  const app = appById(state.detail);
+  if (!act || !app) return;
+  if (act === "launch") launch(app);
+  if (act === "fav") toggleFav(app);
+  if (act === "reveal") api.reveal(app).catch((err) => toast(String(err), true));
+});
+
+// ------------------------------------------------------------------ réglages
+function openSettings() {
+  const s = state.settings;
+  $("#set-dir").value = s.appsDir || state.appsDir;
+  $("#set-bpath").value = s.browserPath || "";
+  $("#set-bargs").value = s.browserArgs || "{url}";
+  $("#set-sound").checked = !!s.sound;
+  for (const r of document.querySelectorAll("input[name=bmode]")) r.checked = r.value === s.browserMode;
+  $(".custom-browser").hidden = s.browserMode !== "custom";
+  renderThemePicker();
+  $("#settings").classList.add("open");
+  $("#settings").setAttribute("aria-hidden", "false");
+}
+
+function closeSettings() {
+  $("#settings").classList.remove("open");
+  $("#settings").setAttribute("aria-hidden", "true");
+}
+
+function renderThemePicker() {
+  $("#theme-picker").innerHTML = THEMES.map((t) => `
+    <button class="theme-opt ${state.settings.theme === t.id ? "active" : ""}" data-theme-id="${t.id}">
+      <div class="swatch" style="background:${t.swatch}"></div><span>${esc(t.name)}</span>
+    </button>`).join("");
+}
+
+async function savePrefs(prefs, { rescan = false } = {}) {
+  try {
+    state.settings = await api.updatePrefs(prefs);
+  } catch (e) {
+    return toast(String(e), true);
+  }
+  applyTheme(state.settings.theme);
+  if (rescan) {
+    state.signature = "";
+    await load();
+  }
+}
+
+$("#settings").addEventListener("click", async (e) => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) return closeSettings();
+  const theme = e.target.closest("[data-theme-id]")?.dataset.themeId;
+  if (theme) {
+    await savePrefs({ theme });
+    renderThemePicker();
+  }
+});
+$("#set-dir").addEventListener("change", (e) => savePrefs({ appsDir: e.target.value.trim() }, { rescan: true }));
+$("#set-dir-pick").addEventListener("click", async () => {
+  const dir = await api.pickFolder();
+  if (!dir) return;
+  $("#set-dir").value = dir;
+  savePrefs({ appsDir: dir }, { rescan: true });
+});
+for (const r of document.querySelectorAll("input[name=bmode]")) {
+  r.addEventListener("change", () => {
+    $(".custom-browser").hidden = r.value !== "custom";
+    savePrefs({ browserMode: r.value });
+  });
+}
+$("#set-bpath").addEventListener("change", (e) => savePrefs({ browserPath: e.target.value.trim() }));
+$("#set-bargs").addEventListener("change", (e) => savePrefs({ browserArgs: e.target.value.trim() }));
+$("#set-sound").addEventListener("change", (e) => savePrefs({ sound: e.target.checked }));
+
+// ------------------------------------------------------------------ mode d'emploi
+const manual = $("#manual");
+const isOpen = (el) => el.classList.contains("open");
+
+function openManual() {
+  closeSettings();
+  closeChangelog();
+  manual.classList.add("open");
+  manual.setAttribute("aria-hidden", "false");
+}
+
+function closeManual() {
+  manual.classList.remove("open");
+  manual.setAttribute("aria-hidden", "true");
+}
+
+manual.addEventListener("click", (e) => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) return closeManual();
+  const link = e.target.closest(".manual-toc a");
+  if (link) {
+    e.preventDefault();
+    $(link.getAttribute("href"), manual).scrollIntoView({ block: "start" });
+  }
+});
+$("#btn-help").addEventListener("click", openManual);
+
+// ------------------------------------------------------------------ version et nouveautés
+const changelog = $("#changelog");
+const versionBadge = $("#version-badge");
+let about = { version: "", changelog: "" };
+
+api.about().then((a) => {
+  about = a;
+  versionBadge.textContent = `v${a.version}`;
+  versionBadge.classList.toggle("new", store("seenVersion") !== a.version);
+}).catch(() => { versionBadge.hidden = true; });
+
+// Rendu minimal du CHANGELOG.md : titres de version, sections, listes, `code` et **gras**.
+function renderChangelog(md, current) {
+  const inline = (s) => esc(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/\[([^\]]+)\]\(https?:[^)]+\)/g, "$1");
+  const day = (d) => { const t = new Date(d); return isNaN(t) ? d : t.toLocaleDateString("fr-FR", { dateStyle: "long" }); };
+  let html = "";
+  let inList = false;
+  const closeList = () => { if (inList) { html += "</ul>"; inList = false; } };
+  for (const line of md.split(/\r?\n/)) {
+    let m;
+    if (line.startsWith("# ")) continue;
+    if ((m = line.match(/^## \[?([^\]\s]+)\]?(?:\s*-\s*(\S+))?/))) {
+      closeList();
+      html += `<div class="changelog-version"><h3>v${esc(m[1])}</h3>${m[2] ? `<time>${esc(day(m[2]))}</time>` : ""}${m[1] === current ? '<span class="current">installée</span>' : ""}</div>`;
+    } else if ((m = line.match(/^### (.+)/))) {
+      closeList();
+      html += `<h4>${inline(m[1])}</h4>`;
+    } else if ((m = line.match(/^- (.+)/))) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${inline(m[1])}</li>`;
+    } else if (line.trim()) {
+      closeList();
+      html += `<p>${inline(line)}</p>`;
+    }
+  }
+  closeList();
+  return html;
+}
+
+function openChangelog() {
+  closeSettings();
+  closeManual();
+  $("#changelog-body").innerHTML = renderChangelog(about.changelog, about.version);
+  changelog.classList.add("open");
+  changelog.setAttribute("aria-hidden", "false");
+  store("seenVersion", about.version);
+  versionBadge.classList.remove("new");
+}
+
+function closeChangelog() {
+  changelog.classList.remove("open");
+  changelog.setAttribute("aria-hidden", "true");
+}
+
+versionBadge.addEventListener("click", openChangelog);
+changelog.addEventListener("click", (e) => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) closeChangelog();
+});
+$("#settings-help").addEventListener("click", openManual);
+
+// ------------------------------------------------------------------ événements globaux
+const speed = document.createElement("div");
+speed.className = "speed-lines";
+document.body.append(speed);
+
+grid.addEventListener("click", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  const app = appById(card.dataset.id);
+  const act = e.target.closest("[data-act]")?.dataset.act;
+  if (act === "fav") return toggleFav(app);
+  if (act === "info") return openDrawer(app);
+  launch(app, card);
+});
+grid.addEventListener("contextmenu", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  e.preventDefault();
+  openDrawer(appById(card.dataset.id));
+});
+grid.addEventListener("pointermove", (e) => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+  card.style.setProperty("--my", `${e.clientY - r.top}px`);
+});
+
+$("#filters").addEventListener("click", (e) => {
+  const f = e.target.closest("[data-filter]")?.dataset.filter;
+  if (!f) return;
+  state.filter = f;
+  render();
+});
+
+const search = $("#search");
+search.addEventListener("input", () => {
+  state.query = search.value;
+  render();
+  const typed = norm(search.value).trim();
+  if (isTheme("lol") && /^\/?ff(15)?$/.test(typed)) {
+    toast("Vote de reddition échoué (1/4)", true);
+  }
+  if (isTheme("sommet")) {
+    if (/^(ohe|hého|heho|youhou|ouhou)$/.test(typed)) toast(`${search.value}… ${search.value}… ${search.value.toLowerCase()}…`);
+    if (typed === "meteo") {
+      toast(new Date().getHours() >= 13
+        ? "Orages prévus en fin de journée ⛈️ Ne traîne pas au sommet"
+        : "Grand beau, iso 0° à 3 800 m ☀️ Départ à l'aube conseillé");
+    }
+  }
+});
+
+const isTheme = (id) => document.documentElement.dataset.theme === id;
+const isLol = () => isTheme("lol");
+
+// La marmotte sort la tête de temps en temps ; un clic la fait siffler (alerte : aigle en vue !).
+const marmot = $("#marmot");
+function marmotPeek() {
+  if (isTheme("sommet") && !document.hidden) {
+    marmot.style.left = `${10 + Math.random() * 75}vw`;
+    marmot.classList.add("peek");
+    setTimeout(() => marmot.classList.remove("peek"), 3500);
+  }
+  setTimeout(marmotPeek, 40_000 + Math.random() * 50_000);
+}
+setTimeout(marmotPeek, 15_000);
+marmot.addEventListener("click", () => {
+  if (state.settings.sound) whistle();
+  marmot.classList.remove("peek");
+  toast("Fiiiiuuu ! La marmotte a donné l'alerte 🦅");
+});
+
+// Touche B : rappel à la base (en accéléré, personne n'a 8 secondes à perdre).
+let recalling = false;
+function recall() {
+  if (recalling) return;
+  recalling = true;
+  document.body.classList.add("recalling");
+  setTimeout(() => {
+    document.body.classList.remove("recalling");
+    recalling = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    grid.querySelector(".card")?.focus({ preventScroll: true });
+    toast("Retour à la base");
+  }, 1600);
+}
+
+const teemoLines = ["Capitaine Teemo, au rapport !", "Taille ne veut rien dire.", "Hut, deux, trois, quatre !"];
+let teemoIdx = 0;
+$("#teemo").addEventListener("click", () => toast(teemoLines[teemoIdx++ % teemoLines.length]));
+
+const sort = $("#sort");
+sort.value = state.sort;
+sort.addEventListener("change", () => { state.sort = sort.value; store("sort", sort.value); render(); });
+
+$("#btn-refresh").addEventListener("click", (e) => {
+  e.currentTarget.classList.remove("spin");
+  void e.currentTarget.offsetWidth;
+  e.currentTarget.classList.add("spin");
+  state.signature = "";
+  load();
+});
+$("#btn-folder").addEventListener("click", () => api.openAppsDir().catch((err) => toast(String(err), true)));
+$("#empty-open").addEventListener("click", () => api.openAppsDir().catch((err) => toast(String(err), true)));
+$("#btn-settings").addEventListener("click", openSettings);
+
+// Retour sur la fenêtre : on rescanne en silence pour voir les nouvelles applis.
+window.addEventListener("focus", () => load({ quiet: true }));
+
+function moveFocus(card, key) {
+  const cards = [...grid.querySelectorAll(".card")];
+  if (!cards.length) return;
+  if (!card) return cards[0].focus();
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+  const i = cards.indexOf(card);
+  const next = { ArrowRight: i + 1, ArrowLeft: i - 1, ArrowDown: i + cols, ArrowUp: i - cols }[key];
+  cards[Math.max(0, Math.min(cards.length - 1, next))].focus();
+}
+
+document.addEventListener("keydown", (e) => {
+  const inField = e.target.matches("input, select, textarea");
+  if ((e.ctrlKey && e.key.toLowerCase() === "k") || (e.key === "/" && !inField)) {
+    e.preventDefault();
+    search.focus();
+    search.select();
+    return;
+  }
+  if (e.key === "F1") {
+    e.preventDefault();
+    isOpen(manual) ? closeManual() : openManual();
+    return;
+  }
+  if (e.key === "F5") {
+    e.preventDefault();
+    $("#btn-refresh").click();
+    return;
+  }
+  if (e.key === "Escape") {
+    if (isOpen(changelog)) return closeChangelog();
+    if (isOpen(manual)) return closeManual();
+    if ($("#settings").classList.contains("open")) return closeSettings();
+    if (state.detail) return closeDrawer();
+    if (search.value) { search.value = ""; state.query = ""; render(); }
+    search.blur();
+    return;
+  }
+  if ($("#settings").classList.contains("open") || isOpen(manual) || isOpen(changelog)) return;
+
+  const card = e.target.closest?.(".card");
+  if (e.target === search && (e.key === "ArrowDown" || e.key === "Enter")) {
+    e.preventDefault();
+    const first = grid.querySelector(".card");
+    if (e.key === "Enter" && first) launch(appById(first.dataset.id), first);
+    else moveFocus(null);
+    return;
+  }
+  if (isLol() && !inField && e.key.toLowerCase() === "b" && !e.ctrlKey && !e.altKey) {
+    e.preventDefault();
+    return recall();
+  }
+  if (e.key.startsWith("Arrow") && !inField) {
+    e.preventDefault();
+    return moveFocus(card, e.key);
+  }
+  if (card) {
+    const app = appById(card.dataset.id);
+    if (e.key === "Enter") return launch(app, card);
+    if (e.key.toLowerCase() === "f") return toggleFav(app);
+    if (e.key.toLowerCase() === "i") return openDrawer(app);
+  }
+  // Taper n'importe où lance la recherche.
+  if (!inField && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    search.focus();
+  }
+});
+
+load();
+
+// ------------------------------------------------------------------ backend simulé (aperçu navigateur)
+function mockApi() {
+  const day = 864e5, now = Date.now();
+  const settings = {
+    appsDir: "", theme: store("mock-theme") || "arcade", browserMode: "app", browserPath: "", browserArgs: "{url}", sound: true,
+    favorites: ["kanban.html"],
+    stats: { "kanban.html": { count: 42, last: now - 3e5 }, "csv-lab.exe": { count: 17, last: now - day }, "json-garage/index.html": { count: 5, last: now - 9 * day } },
+  };
+  const a = (id, kind, name, extra = {}) => ({
+    id, kind, name, path: "C:\\Apps\\" + id.replace(/\//g, "\\"), description: "", version: "", author: "", category: "", tags: [], color: "", icon: "", notes: "",
+    size: 180000, modified: now - Math.random() * 30 * day, sources: [], ...extra,
+  });
+  const apps = [
+    a("kanban.html", "html", "Kanban Turbo", { description: "Tableau de tâches ultra-rapide, tout tient dans un seul fichier.", version: "2.4.1", category: "Productivité", tags: ["tâches", "perso"], icon: "🏁", sources: ["html"] }),
+    a("csv-lab.exe", "exe", "CSV Lab", { description: "Nettoie, fusionne et convertit des CSV à la volée.", version: "1.0.3", author: "Moi", category: "Data", tags: ["csv", "excel"], color: "#00f0ff", sources: ["exe", "sidecar"] }),
+    a("json-garage/index.html", "html", "JSON Garage", { description: "Visualiseur et formateur JSON avec diff.", version: "0.9", category: "Data", tags: ["json"], icon: "🔧", sources: ["sidecar"] }),
+    a("pomodoro.html", "html", "Pit Stop Timer", { description: "Minuteur pomodoro façon arrêt au stand.", category: "Productivité", icon: "⏱️", sources: ["html"] }),
+    a("regex.html", "html", "Regex Drift", { description: "Testeur d'expressions régulières avec surlignage en direct.", version: "3.1", category: "Dev", tags: ["regex"], sources: ["html"] }),
+    a("screenshot.exe", "exe", "SnapShot", { description: "Capture d'écran annotée.", version: "5.2.0.0", author: "ACME", category: "Outils", sources: ["exe"] }),
+    a("notes.html", "html", "notes"),
+    a("color-picker.html", "html", "Livrée — nuancier", { description: "Génère des palettes de couleurs pour vos thèmes.", category: "Design", icon: "🎨", color: "#ffd23f", sources: ["html"] }),
+  ];
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  return {
+    load: async () => ({ settings: clone(settings), appsDir: "C:\\Apps", apps: clone(apps) }),
+    updatePrefs: async (p) => {
+      for (const [k, v] of Object.entries(p)) if (v !== undefined) settings[k] = v;
+      store("mock-theme", settings.theme);
+      return clone(settings);
+    },
+    toggleFavorite: async (id) => {
+      const i = settings.favorites.indexOf(id);
+      i >= 0 ? settings.favorites.splice(i, 1) : settings.favorites.push(id);
+      return clone(settings);
+    },
+    launch: async (app) => {
+      const s = (settings.stats[app.id] ??= { count: 0, last: 0 });
+      s.count++; s.last = Date.now();
+      return clone(settings);
+    },
+    reveal: async () => {},
+    openAppsDir: async () => {},
+    pickFolder: async () => null,
+    about: async () => ({ version: "0.0.0-dev", changelog: "## [0.0.0-dev] - 2026-01-01\n\n### Ajouté\n- Aperçu navigateur : le vrai changelog n'est lu que dans l'appli." }),
+  };
+}

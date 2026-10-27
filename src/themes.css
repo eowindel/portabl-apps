@@ -1,0 +1,294 @@
+/*
+ * Thèmes : chaque thème redéfinit les variables et habille le décor (.sky .sun .road .scanlines).
+ * Pour en ajouter un : copier un bloc, changer le nom, puis l'ajouter à THEMES dans app.js.
+ */
+
+:root {
+  --font-display: "Orbitron", "Segoe UI", sans-serif;
+  --font-body: "Chakra Petch", "Segoe UI", sans-serif;
+  --radius: 12px;
+  --skew: 0deg;
+  --title-weight: 900;
+  --title-style: italic;
+  --star: #ffd23f;
+}
+
+/* ------------------------------------------------------------------ NÉON ARCADE (synthwave) */
+[data-theme="arcade"] {
+  --bg: #0b0614;
+  --bg-2: #140a24;
+  --panel: rgba(30, 14, 52, .72);
+  --panel-border: rgba(255, 43, 214, .22);
+  --card: linear-gradient(160deg, rgba(40, 16, 70, .85), rgba(16, 8, 30, .9));
+  --chip: rgba(255, 255, 255, .07);
+  --topbar: rgba(11, 6, 20, .7);
+  --text: #f6eaff;
+  --muted: #a98fc4;
+  --accent: #ff2bd6;
+  --accent-2: #00f0ff;
+  --accent-3: #ffd23f;
+  --glow: rgba(255, 43, 214, .45);
+  --title-fill: linear-gradient(180deg, #fff 10%, #00f0ff 45%, #ff2bd6 80%);
+  --sky: linear-gradient(180deg, #0b0614 0%, #1d0a3a 45%, #6a0f6e 62%, #0b0614 62.2%);
+  --skew: -6deg;
+}
+[data-theme="arcade"] .sun {
+  display: block; left: 50%; top: 30vh; width: 46vh; height: 46vh; translate: -50% 0; border-radius: 50%;
+  background: linear-gradient(180deg, #ffe45c 0%, #ff8a3d 45%, #ff2bd6 100%);
+  /* moitié haute pleine + rayures partout = soleil rayé en bas, style rétro */
+  mask-image: linear-gradient(180deg, #000 55%, transparent 55%), repeating-linear-gradient(180deg, #000 0 10px, transparent 10px 15px);
+  box-shadow: 0 0 120px rgba(255, 43, 214, .5);
+  opacity: .55; filter: blur(.3px);
+}
+[data-theme="arcade"] .road {
+  display: block; left: -50%; right: -50%; top: 62vh; bottom: 0; perspective: 260px; overflow: hidden;
+}
+[data-theme="arcade"] .grid {
+  position: absolute; inset: -100% 0 0 0; transform: rotateX(72deg); transform-origin: bottom;
+  background:
+    linear-gradient(90deg, rgba(0, 240, 255, .55) 1px, transparent 1px) 0 0 / 60px 60px,
+    linear-gradient(0deg, rgba(255, 43, 214, .55) 1px, transparent 1px) 0 0 / 60px 60px;
+  animation: drive 1.2s linear infinite;
+  mask-image: linear-gradient(0deg, #000 30%, transparent 85%);
+}
+@keyframes drive { to { background-position: 0 60px, 0 60px; } }
+[data-theme="arcade"] body.revving .grid { animation-duration: .25s; }
+
+/* ------------------------------------------------------------------ SUPERBIKE (piste, carbone, rouge course) */
+[data-theme="superbike"] {
+  --bg: #0c0c0e;
+  --bg-2: #141417;
+  --panel: rgba(28, 28, 32, .85);
+  --panel-border: rgba(255, 255, 255, .1);
+  --card: linear-gradient(135deg, #1b1b20 0%, #121215 100%);
+  --chip: rgba(255, 255, 255, .07);
+  --topbar: rgba(12, 12, 14, .82);
+  --text: #f4f4f4;
+  --muted: #8d8d96;
+  --accent: #ff2a2a;
+  --accent-2: #ffffff;
+  --accent-3: #ffcc00;
+  --glow: rgba(255, 42, 42, .4);
+  --title-fill: linear-gradient(180deg, #fff 40%, #ff2a2a 41%, #ff2a2a 100%);
+  --sky:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,.35) 0 2px, transparent 2px 6px),
+    radial-gradient(ellipse at 80% 0%, #2a0d0d 0%, #0c0c0e 60%);
+  --radius: 4px;
+  --skew: -10deg;
+}
+[data-theme="superbike"] .sun { /* bandes de livrée en travers de l'écran */
+  display: block; right: -10vw; top: -20vh; width: 40vw; height: 160vh; rotate: 28deg;
+  background: linear-gradient(90deg, transparent 0 20%, rgba(255,42,42,.16) 20% 45%, transparent 45% 52%, rgba(255,255,255,.06) 52% 60%, transparent 60%);
+}
+[data-theme="superbike"] .road { /* vibreur rouge et blanc en bas d'écran */
+  display: block; left: 0; right: 0; bottom: 0; height: 14px; opacity: .7;
+  background: repeating-linear-gradient(90deg, #ff2a2a 0 40px, #f4f4f4 40px 80px);
+}
+[data-theme="superbike"] .card { border-left: 4px solid var(--c); }
+[data-theme="superbike"] .card::before { display: none; }
+
+/* ------------------------------------------------------------------ ENDURO (boue, orange, jaune fluo) */
+[data-theme="enduro"] {
+  --bg: #15120c;
+  --bg-2: #1e1910;
+  --panel: rgba(40, 32, 20, .82);
+  --panel-border: rgba(255, 122, 0, .22);
+  --card: linear-gradient(170deg, #2a2216 0%, #1a150d 100%);
+  --chip: rgba(255, 230, 190, .08);
+  --topbar: rgba(21, 18, 12, .82);
+  --text: #fff3e0;
+  --muted: #b39b78;
+  --accent: #ff7a00;
+  --accent-2: #c6ff00;
+  --accent-3: #00c2ff;
+  --glow: rgba(255, 122, 0, .4);
+  --star: #c6ff00;
+  --title-fill: linear-gradient(180deg, #c6ff00 0%, #ff7a00 100%);
+  --sky: radial-gradient(ellipse at 50% 120%, #4a2d10 0%, #15120c 65%);
+  --radius: 10px;
+  --skew: -4deg;
+}
+[data-theme="enduro"] .road { /* traces de crampons */
+  display: block; left: 0; right: 0; bottom: 0; height: 38vh; opacity: .16;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 18px, #ff7a00 18px 30px) left 20% bottom 0 / 120px 100% no-repeat,
+    repeating-linear-gradient(65deg, transparent 0 18px, #ff7a00 18px 30px) right 25% bottom 0 / 120px 100% no-repeat;
+  mask-image: linear-gradient(0deg, #000, transparent);
+}
+[data-theme="enduro"] .card { border-width: 2px; }
+
+/* ------------------------------------------------------------------ HEXTECH (pour les invocateurs) */
+[data-theme="lol"] {
+  --font-display: "Cinzel", Georgia, serif;
+  --bg: #010a13;
+  --bg-2: #091428;
+  --panel: rgba(9, 20, 40, .85);
+  --panel-border: rgba(200, 170, 110, .3);
+  --card: linear-gradient(180deg, rgba(9, 20, 40, .92), rgba(1, 10, 19, .95));
+  --chip: rgba(200, 170, 110, .08);
+  --topbar: rgba(1, 10, 19, .85);
+  --text: #f0e6d2;
+  --muted: #a09b8c;
+  --accent: #c8aa6e;
+  --accent-2: #0ac8b9;
+  --accent-3: #0397ab;
+  --glow: rgba(10, 200, 185, .35);
+  --star: #f0e6d2;
+  --title-fill: linear-gradient(180deg, #f0e6d2 20%, #c8aa6e 60%, #785a28 100%);
+  --title-style: normal;
+  --title-weight: 700;
+  --radius: 2px;
+  /* motif hexagonal discret */
+  --sky:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97'%3E%3Cpath d='M28 0l28 16v32L28 64 0 48V16z M28 64v33' fill='none' stroke='%23c8aa6e' stroke-opacity='.05'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 50% -10%, #0b2a40 0%, #010a13 60%);
+}
+[data-theme="lol"] .sun { /* la rivière traverse la carte en diagonale */
+  display: block; left: -30vw; top: 40vh; width: 160vw; height: 26vh; rotate: 32deg;
+  background: linear-gradient(180deg, transparent, rgba(10, 200, 185, .09) 40%, rgba(3, 151, 171, .12) 50%, rgba(10, 200, 185, .09) 60%, transparent);
+  filter: blur(18px);
+}
+[data-theme="lol"] .road { /* minimap : 3 voies, rivière, bases bleue et rouge */
+  display: block; right: 18px; bottom: 18px; width: 150px; height: 150px; opacity: .45;
+  border: 2px solid #785a28; background-color: rgba(1, 10, 19, .8);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 0L100 100' stroke='%230ac8b9' stroke-width='9' stroke-opacity='.25'/%3E%3Cpath d='M12 88V12h76M12 88h76V12M12 88L88 12' fill='none' stroke='%23c8aa6e' stroke-width='3' stroke-opacity='.7'/%3E%3Ccircle cx='12' cy='88' r='7' fill='%230ac8b9'/%3E%3Ccircle cx='88' cy='12' r='7' fill='%23e84057'/%3E%3C/svg%3E");
+}
+[data-theme="lol"] .road::after { /* ping « en approche » sur la voie du milieu */
+  content: ""; position: absolute; left: 47%; top: 47%; width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid #f0e6d2; animation: ping 2.4s ease-out infinite;
+}
+@keyframes ping { 0% { transform: scale(.3); opacity: 1; } 70%, 100% { transform: scale(2.6); opacity: 0; } }
+[data-theme="lol"] .card {
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+}
+[data-theme="lol"] .card::before { height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+[data-theme="lol"] .app-icon { border-radius: 50%; box-shadow: 0 0 0 2px #785a28, 0 0 0 4px rgba(200,170,110,.25); }
+[data-theme="lol"] .race-number { font-style: normal; }
+[data-theme="lol"] .chip.active, [data-theme="lol"] .btn.primary { background: linear-gradient(180deg, #c8aa6e, #785a28); color: #010a13; }
+[data-theme="lol"] .toast { background: linear-gradient(180deg, #1e2328, #010a13); color: #f0e6d2; border: 2px solid #c8aa6e; font-style: normal; text-transform: uppercase; }
+[data-theme="lol"] .toast.kill { color: #e84057; text-shadow: 0 0 14px rgba(232, 64, 87, .7); }
+
+/* Rappel (touche B) : le cercle bleu de retour à la base */
+[data-theme="lol"] body.recalling::after {
+  content: ""; position: fixed; left: 50%; bottom: 12vh; z-index: 70; width: 180px; height: 180px; margin-left: -90px;
+  border-radius: 50%; border: 3px solid #0ac8b9; pointer-events: none;
+  box-shadow: 0 0 40px #0ac8b9, inset 0 0 40px #0ac8b9;
+  animation: recall 1.6s ease-in forwards;
+}
+@keyframes recall { 0% { transform: scale(1.4); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(.1); opacity: 1; } }
+
+/* Un petit champignon à peine visible dans un coin… */
+.teemo { display: none; }
+[data-theme="lol"] .teemo {
+  display: block; position: fixed; left: 10px; bottom: 8px; z-index: 5; padding: 4px;
+  background: none; border: 0; font-size: 16px; opacity: .1; cursor: default; transition: opacity .3s;
+}
+[data-theme="lol"] .teemo:hover { opacity: .6; }
+
+/* ------------------------------------------------------------------ SOMMET (pour les randonneurs) */
+[data-theme="sommet"] {
+  --font-display: "Oswald", "Segoe UI", sans-serif;
+  --bg: #0e1621;
+  --bg-2: #13202e;
+  --panel: rgba(19, 32, 46, .82);
+  --panel-border: rgba(127, 209, 255, .18);
+  --card: linear-gradient(180deg, rgba(24, 40, 56, .9), rgba(14, 22, 33, .94));
+  --chip: rgba(238, 243, 247, .07);
+  --topbar: rgba(14, 22, 33, .78);
+  --text: #eef3f7;
+  --muted: #8fa3b5;
+  --accent: #ff8c42;
+  --accent-2: #7fd1ff;
+  --accent-3: #5cbf6a;
+  --glow: rgba(255, 140, 66, .35);
+  --star: #ffd166;
+  --title-fill: linear-gradient(180deg, #ffffff 30%, #cfe6f5 60%, #7fd1ff 100%);
+  --title-style: normal;
+  --title-weight: 600;
+  --radius: 8px;
+  --sky: linear-gradient(180deg, #0b1626 0%, #1d3b5c 55%, #3d6a8c 100%);
+}
+/* Le ciel suit l'heure réelle (data-daypart posé par app.js) */
+[data-theme="sommet"][data-daypart="dawn"] { --sky: linear-gradient(180deg, #24304f 0%, #8a6a9b 50%, #f7b58c 100%); }
+[data-theme="sommet"][data-daypart="day"] { --sky: linear-gradient(180deg, #1b4f80 0%, #4f8fc0 60%, #a9d4ef 100%); }
+[data-theme="sommet"][data-daypart="dusk"] { --sky: linear-gradient(180deg, #1b2240 0%, #6b3f6e 50%, #f08a5d 100%); }
+[data-theme="sommet"][data-daypart="night"] { --sky: linear-gradient(180deg, #03060d 0%, #0b1626 60%, #16283d 100%); }
+
+[data-theme="sommet"] .sun { /* chaîne lointaine, névés et croix sommitale */
+  display: block; left: 0; right: 0; bottom: 0; height: 62vh;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 300' preserveAspectRatio='xMidYMax slice'%3E%3Cpath d='M0 300V190l80-50 70 30 90-80 60 40 80-70 50 35 90-65 70 70 70-30 80 60 80-45 80 65 100-40v190z' fill='%23263d55'/%3E%3Cpath d='M490 58l30-28 32 32-14-6-10 10-13-12-12 10zM362 78l18-18 18 16-10-4-8 8-8-8zM645 82l15-12 16 14-8-4-8 6-8-6zM228 102l12-12 13 13-7-3-6 5z' fill='%23e3edf5'/%3E%3Cpath d='M520 30V10M513 16h14' stroke='%23e3edf5' stroke-width='2.5'/%3E%3C/svg%3E") bottom center / cover no-repeat;
+  opacity: .9;
+}
+[data-theme="sommet"][data-daypart="dusk"] .sun,
+[data-theme="sommet"][data-daypart="dawn"] .sun { filter: sepia(.45) saturate(2.2) hue-rotate(-25deg) brightness(1.05); } /* alpenglow */
+[data-theme="sommet"] .road { /* premier plan : crêtes boisées */
+  display: block; left: 0; right: 0; bottom: 0; height: 30vh;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 200' preserveAspectRatio='xMidYMax slice'%3E%3Cpath d='M0 200V110l120-40 100 30 110-50 120 55 110-40 140 50 120-55 180 40v100z' fill='%23142130'/%3E%3Cg fill='%230d1823'%3E%3Cpath d='M40 200l14-60 14 60zM70 200l10-44 10 44zM260 200l16-70 16 70zM292 200l11-48 11 48zM610 200l15-64 15 64zM640 200l10-42 10 42zM880 200l16-72 16 72zM912 200l11-50 11 50z'/%3E%3C/g%3E%3C/svg%3E") bottom center / cover no-repeat;
+}
+[data-theme="sommet"][data-daypart="night"] .scanlines { /* étoiles */
+  display: block; inset: 0 0 50% 0;
+  background:
+    radial-gradient(1.5px 1.5px at 8% 20%, #fff, transparent), radial-gradient(1px 1px at 18% 45%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 27% 12%, #fff, transparent), radial-gradient(1px 1px at 39% 33%, #fff, transparent),
+    radial-gradient(2px 2px at 52% 18%, #fff, transparent), radial-gradient(1px 1px at 61% 40%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 72% 9%, #fff, transparent), radial-gradient(1px 1px at 83% 28%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 93% 15%, #fff, transparent), radial-gradient(1px 1px at 46% 55%, #fff, transparent);
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: .5; } to { opacity: 1; } }
+
+[data-theme="sommet"] .brand h1, [data-theme="sommet"] .card-title h3 { text-transform: uppercase; letter-spacing: .06em; }
+[data-theme="sommet"] .card::before { /* balisage GR blanc et rouge */
+  inset: 0 auto auto 18px; width: 30px; height: 10px; border-radius: 0 0 2px 2px;
+  background: linear-gradient(180deg, #f4f4f4 0 50%, #e63946 50%);
+}
+[data-theme="sommet"] .card { border-left: 3px solid var(--c); }
+[data-theme="sommet"] .race-number { font: 600 30px/1 var(--font-display); top: 52px; bottom: auto; right: 14px; opacity: .1; }
+[data-theme="sommet"] .chip.active { background: #ffd23f; color: #1a1a1a; box-shadow: none; } /* jaune panneau de rando */
+[data-theme="sommet"] .toast { background: #ffd23f; color: #1a1a1a; font: 600 17px var(--font-display); text-transform: uppercase; letter-spacing: .05em; box-shadow: 0 6px 0 #c9a200; }
+[data-theme="sommet"] .toast.kill { background: #fff; box-shadow: 0 6px 0 #e63946; }
+
+/* Une marmotte surveille la vallée… */
+.marmot { display: none; }
+[data-theme="sommet"] .marmot {
+  display: block; position: fixed; bottom: calc(30vh - 34px); z-index: 4; padding: 0;
+  background: none; border: 0; font-size: 30px; cursor: pointer;
+  transform: translateY(70px); opacity: 0; transition: transform .5s cubic-bezier(.3,1.5,.5,1), opacity .3s;
+}
+[data-theme="sommet"] .marmot.peek { transform: none; opacity: 1; }
+
+/* ------------------------------------------------------------------ 8-BIT (borne d'arcade, écran CRT) */
+[data-theme="pixel"] {
+  --font-display: "Press Start 2P", monospace;
+  --bg: #040904;
+  --bg-2: #081208;
+  --panel: rgba(10, 26, 10, .9);
+  --panel-border: rgba(57, 255, 20, .3);
+  --card: #071207;
+  --chip: rgba(57, 255, 20, .08);
+  --topbar: rgba(4, 9, 4, .9);
+  --text: #d8ffd0;
+  --muted: #5fae55;
+  --accent: #39ff14;
+  --accent-2: #ff00aa;
+  --accent-3: #00e5ff;
+  --glow: rgba(57, 255, 20, .35);
+  --star: #ffe600;
+  --title-fill: linear-gradient(180deg, #39ff14, #39ff14);
+  --sky: radial-gradient(ellipse at center, #0b1f0b 0%, #040904 75%);
+  --radius: 0px;
+  --title-style: normal;
+  --title-weight: 400;
+}
+[data-theme="pixel"] .scanlines {
+  display: block; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 1px, transparent 1px 3px);
+}
+[data-theme="pixel"] .brand h1 { font-size: 20px; }
+[data-theme="pixel"] .card-title h3 { font-size: 11px; line-height: 1.6; }
+[data-theme="pixel"] .gauge-val { font-size: 18px; }
+[data-theme="pixel"] .race-number { font-style: normal; font-size: 60px; }
+[data-theme="pixel"] .drawer h2, [data-theme="pixel"] .empty h2 { font-size: 16px; line-height: 1.6; }
+[data-theme="pixel"] .modal h2, [data-theme="pixel"] .toast { font-size: 13px; font-style: normal; }
+[data-theme="pixel"] .card, [data-theme="pixel"] .icon-btn, [data-theme="pixel"] .gauge { box-shadow: 4px 4px 0 rgba(57, 255, 20, .25); }

@@ -1,0 +1,15 @@
+# Dépendances et builds
+node_modules/
+src-tauri/target/
+src-tauri/gen/
+dist/
+
+# Exécutables tiers copiés pour tester les démos (non redistribuables)
+demo-apps/**/*.exe
+
+# Notes perso : les réponses des easter eggs restent secrètes
+easter-eggs-checklist.txt
+
+# Outils locaux
+.claude/
+*.log

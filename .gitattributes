@@ -1,0 +1,8 @@
+# Fins de ligne normalisées dans le dépôt, converties selon l'OS au checkout
+* text=auto
+
+*.exe binary
+*.ico binary
+*.icns binary
+*.png binary
+*.woff2 binary

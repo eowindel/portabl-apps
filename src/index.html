@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="fr" data-theme="arcade">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Porta[b]l Apps</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="themes.css">
+</head>
+<body>
+  <!-- Décor de fond : chaque thème l'habille différemment -->
+  <div class="scenery" aria-hidden="true">
+    <div class="sky"></div>
+    <div class="sun"></div>
+    <div class="road"><div class="grid"></div></div>
+    <div class="scanlines"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M12 44 A22 22 0 1 1 52 44" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        <line class="needle" x1="32" y1="40" x2="46" y2="26" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="32" cy="40" r="5" fill="var(--text)"/>
+      </svg>
+      <div>
+        <h1>PORTA<span class="b">[B]</span>L APPS</h1>
+        <p class="tagline">garage d'applis</p>
+      </div>
+      <button class="version-badge" id="version-badge" title="Nouveautés">v…</button>
+    </div>
+
+    <label class="search">
+      <span class="search-icon" aria-hidden="true">▶</span>
+      <input id="search" type="search" placeholder="Rechercher une machine…" autocomplete="off" spellcheck="false">
+      <kbd>Ctrl K</kbd>
+    </label>
+
+    <div class="actions">
+      <button class="icon-btn" id="btn-refresh" title="Rescanner le dossier (F5)">⟳</button>
+      <button class="icon-btn" id="btn-folder" title="Ouvrir le dossier des applis">📂</button>
+      <button class="icon-btn" id="btn-settings" title="Réglages">⚙</button>
+      <button class="icon-btn" id="btn-help" title="Mode d'emploi (F1)">?</button>
+    </div>
+  </header>
+
+  <section class="hud">
+    <div class="gauges">
+      <div class="gauge"><span class="gauge-val" id="g-apps">0</span><span class="gauge-lbl">machines</span></div>
+      <div class="gauge"><span class="gauge-val" id="g-today">0</span><span class="gauge-lbl">tours aujourd'hui</span></div>
+      <div class="gauge"><span class="gauge-val" id="g-total">0</span><span class="gauge-lbl">tours au total</span></div>
+    </div>
+    <div class="filters" id="filters" role="tablist"></div>
+    <select id="sort" class="sort" title="Trier">
+      <option value="recent">Derniers lancés</option>
+      <option value="laps">Plus de tours</option>
+      <option value="name">A → Z</option>
+      <option value="modified">Modifiés récemment</option>
+    </select>
+  </section>
+
+  <main>
+    <div class="grid-apps" id="grid"></div>
+    <div class="empty" id="empty" hidden>
+      <div class="empty-flag">🏁</div>
+      <h2 id="empty-title">Garage vide</h2>
+      <p id="empty-text"></p>
+      <button class="btn primary" id="empty-open">Ouvrir le dossier des applis</button>
+    </div>
+  </main>
+
+  <!-- Fiche détaillée -->
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+    <div id="drawer-body"></div>
+  </aside>
+
+  <!-- Réglages -->
+  <div class="modal" id="settings" aria-hidden="true">
+    <div class="modal-card">
+      <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+      <h2>Réglages</h2>
+
+      <h3>Dossier des applis</h3>
+      <div class="row">
+        <input id="set-dir" type="text" spellcheck="false">
+        <button class="btn" id="set-dir-pick">Parcourir…</button>
+      </div>
+      <p class="hint">Les fichiers <code>.html</code> / <code>.exe</code> à la racine, et les sous-dossiers contenant un <code>index.html</code>, un seul <code>.exe</code> ou un <code>portal.json</code>.</p>
+
+      <h3>Thème</h3>
+      <div class="theme-picker" id="theme-picker"></div>
+
+      <h3>Ouverture des applis HTML</h3>
+      <div class="radio-list">
+        <label><input type="radio" name="bmode" value="app"> <b>Fenêtre dédiée</b> <span>Edge en mode appli : une fenêtre par appli, sans onglets</span></label>
+        <label><input type="radio" name="bmode" value="default"> <b>Navigateur par défaut</b> <span>Ouvre un onglet dans votre navigateur habituel</span></label>
+        <label><input type="radio" name="bmode" value="custom"> <b>Personnalisé</b> <span>Le navigateur et les arguments de votre choix</span></label>
+      </div>
+      <div class="row custom-browser">
+        <input id="set-bpath" type="text" placeholder="C:\Program Files\Google\Chrome\Application\chrome.exe" spellcheck="false">
+        <input id="set-bargs" type="text" placeholder="--app={url}" spellcheck="false">
+      </div>
+
+      <h3>Ambiance</h3>
+      <label class="toggle"><input type="checkbox" id="set-sound"> Bruit de moteur au lancement</label>
+
+      <p class="hint" style="margin-top:24px">Comment ranger et décrire ses applis ? <button class="btn" id="settings-help">📖 Mode d'emploi</button></p>
+    </div>
+  </div>
+
+  <!-- Nouveautés (CHANGELOG.md embarqué dans l'exe) -->
+  <div class="modal" id="changelog" aria-hidden="true">
+    <div class="modal-card manual-card">
+      <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+      <h2>Nouveautés</h2>
+      <div id="changelog-body"></div>
+    </div>
+  </div>
+
+  <!-- Mode d'emploi -->
+  <div class="modal" id="manual" aria-hidden="true">
+    <div class="modal-card manual-card">
+      <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+      <h2>Mode d'emploi</h2>
+      <nav class="manual-toc">
+        <a href="#m-start">Démarrer</a>
+        <a href="#m-folder">Ranger ses applis</a>
+        <a href="#m-meta">Décrire ses applis</a>
+        <a href="#m-use">Lancer et naviguer</a>
+        <a href="#m-settings">Réglages</a>
+        <a href="#m-data">Données</a>
+        <a href="#m-faq">Dépannage</a>
+      </nav>
+
+      <section id="m-start">
+        <h3>Démarrer</h3>
+        <p>Porta[b]l Apps est un lanceur pour vos applis autonomes <code>.html</code> et <code>.exe</code>. Rien à installer, aucun réseau nécessaire : copiez le dossier où vous voulez (bureau, clé USB, dossier perso) et lancez <code>portabl-apps.exe</code>.</p>
+<pre>PortablApps\
+├── portabl-apps.exe     le lanceur
+├── portabl-apps.json    vos réglages (créé tout seul)
+└── apps\                vos applis</pre>
+        <p>Déposez vos applis dans <code>apps\</code> (bouton 📂), revenez sur la fenêtre : elles apparaissent.</p>
+      </section>
+
+      <section id="m-folder">
+        <h3>Ranger ses applis</h3>
+        <p>Règle d'or : <b>une appli = une carte</b>. Seul le premier niveau du dossier <code>apps\</code> est regardé.</p>
+        <h4>Un fichier seul, à la racine</h4>
+        <p>Chaque <code>.html</code>, <code>.htm</code> ou <code>.exe</code> posé directement dans <code>apps\</code> devient une carte. Les autres fichiers sont ignorés. Idéal pour les applis tout-en-un.</p>
+        <h4>Un sous-dossier = une appli</h4>
+        <p>Pour une appli qui a besoin de fichiers à côté d'elle (images, scripts, DLL, données). Le fichier lancé est, dans l'ordre :</p>
+        <ol>
+          <li>celui indiqué par <code>"entry"</code> dans un <code>portal.json</code> du dossier ;</li>
+          <li>sinon <code>index.html</code> ;</li>
+          <li>sinon l'<b>unique</b> <code>.exe</code> du dossier.</li>
+        </ol>
+        <p>Si aucune règle ne s'applique (deux exe sans <code>portal.json</code>, aucun <code>index.html</code>…), le dossier est ignoré. Les sous-sous-dossiers ne sont jamais pris pour des applis.</p>
+<pre>apps\
+├── Kanban.html              ✅ carte
+├── Kanban.portal.json       infos de Kanban
+├── Calc.exe                 ✅ carte
+├── notes.txt                ❌ ignoré
+├── JsonGarage\              ✅ carte (index.html)
+│   ├── index.html
+│   └── portal.json
+├── OutilPro\                ✅ carte (seul exe du dossier)
+│   ├── OutilPro.exe
+│   └── moteur.dll
+├── Suite\                   ✅ carte (grâce à "entry")
+│   ├── portal.json          { "entry": "Lanceur.exe" }
+│   ├── Lanceur.exe
+│   └── Updater.exe
+└── Brouillons\              ❌ ignoré
+    ├── essai1.html
+    └── essai2.html</pre>
+        <p class="tip">💡 Un exe qui a besoin de DLL ou de fichiers de config : mettez-le dans son propre sous-dossier. Il est toujours lancé depuis son dossier.</p>
+      </section>
+
+      <section id="m-meta">
+        <h3>Décrire ses applis</h3>
+        <p>Nom, description, version, catégorie, tags, couleur, icône, notes… Tout est facultatif. Les infos sont lues dans cet ordre de priorité :</p>
+        <h4>1. Un fichier <code>.portal.json</code></h4>
+        <p>À côté d'un fichier seul : même nom + <code>.portal.json</code> (<code>Kanban.html</code> → <code>Kanban.portal.json</code>). Dans un sous-dossier : <code>portal.json</code>.</p>
+<pre>{
+  "name": "Mon Appli",
+  "description": "Ce qu'elle fait en une phrase",
+  "version": "1.2.0",
+  "author": "Moi",
+  "category": "Outils",
+  "tags": ["csv", "export"],
+  "color": "#00f0ff",
+  "icon": "🔧",
+  "notes": "Raccourcis, astuces…",
+  "hidden": false,
+  "entry": "app.html"
+}</pre>
+        <ul>
+          <li><code>icon</code> : un emoji, ou une image à côté (<code>"logo.png"</code>, <code>.svg</code>, <code>.ico</code>, <code>.jpg</code>…).</li>
+          <li><code>category</code> : crée automatiquement un filtre en haut de l'écran.</li>
+          <li><code>hidden</code> : <code>true</code> masque l'appli sans la supprimer.</li>
+          <li><code>entry</code> : seulement pour un sous-dossier.</li>
+        </ul>
+        <h4>2. Les balises du HTML</h4>
+        <p>Le <code>&lt;title&gt;</code>, le favicon et ces balises dans le <code>&lt;head&gt;</code> :</p>
+<pre>&lt;meta name="description" content="…"&gt;
+&lt;meta name="author" content="…"&gt;
+&lt;meta name="version" content="1.2.0"&gt;
+&lt;meta name="portal:category" content="Outils"&gt;
+&lt;meta name="portal:tags" content="csv, export"&gt;
+&lt;meta name="portal:color" content="#00f0ff"&gt;
+&lt;meta name="portal:icon" content="🔧"&gt;
+&lt;meta name="portal:notes" content="…"&gt;</pre>
+        <h4>3. Les infos de l'exe</h4>
+        <p>Description, version, société, commentaires et icône, lues dans les propriétés du fichier (clic droit › Propriétés › Détails dans l'explorateur).</p>
+        <p>À défaut de tout cela : le nom du fichier. La fiche détaillée d'une appli (ⓘ) indique d'où viennent ses infos.</p>
+      </section>
+
+      <section id="m-use">
+        <h3>Lancer et naviguer</h3>
+        <ul>
+          <li><b>Clic</b> sur une carte : lance l'appli.</li>
+          <li><b>☆</b> : favori, toujours en tête de liste. <b>ⓘ</b> ou <b>clic droit</b> : fiche détaillée (chemin, taille, notes, bouton « afficher dans l'explorateur »).</li>
+          <li><b>Filtres</b> : tout, favoris, HTML, EXE et une pastille par catégorie. <b>Tri</b> : derniers lancés, plus lancés, A→Z, modifiés récemment.</li>
+          <li>Le compteur de chaque carte indique combien de fois l'appli a été lancée, et quand.</li>
+        </ul>
+        <table class="keys">
+          <tr><td><kbd>taper</kbd></td><td>rechercher (nom, description, tags, catégorie, auteur)</td></tr>
+          <tr><td><kbd>Ctrl K</kbd> <kbd>/</kbd></td><td>aller dans la recherche</td></tr>
+          <tr><td><kbd>Entrée</kbd></td><td>dans la recherche : lancer le premier résultat</td></tr>
+          <tr><td><kbd>↑ ↓ ← →</kbd></td><td>se déplacer entre les cartes</td></tr>
+          <tr><td><kbd>Entrée</kbd></td><td>sur une carte : lancer</td></tr>
+          <tr><td><kbd>F</kbd></td><td>favori</td></tr>
+          <tr><td><kbd>I</kbd></td><td>fiche détaillée</td></tr>
+          <tr><td><kbd>F5</kbd></td><td>rescanner le dossier</td></tr>
+          <tr><td><kbd>F1</kbd></td><td>ce mode d'emploi</td></tr>
+          <tr><td><kbd>Échap</kbd></td><td>fermer / effacer la recherche</td></tr>
+        </table>
+      </section>
+
+      <section id="m-settings">
+        <h3>Réglages ⚙</h3>
+        <ul>
+          <li><b>Dossier des applis</b> : n'importe quel dossier (local, réseau, clé USB). Chemin relatif = relatif à l'exe.</li>
+          <li><b>Thème</b> : change l'ambiance, les textes et le son. Chaque thème a sa personnalité, prenez le temps de les explorer…</li>
+          <li><b>Ouverture des applis HTML</b> :
+            <ul>
+              <li><i>Fenêtre dédiée</i> (par défaut) : chaque appli s'ouvre dans sa propre fenêtre Edge, sans onglets ni barre d'adresse. Pratique pour en ouvrir plusieurs.</li>
+              <li><i>Navigateur par défaut</i> : un onglet dans votre navigateur habituel.</li>
+              <li><i>Personnalisé</i> : le navigateur de votre choix. <code>{url}</code> est remplacé par l'adresse du fichier, par ex. <code>--app={url}</code> pour Chrome.</li>
+            </ul>
+          </li>
+          <li><b>Son</b> : active ou coupe les sons au lancement.</li>
+        </ul>
+      </section>
+
+      <section id="m-data">
+        <h3>Données</h3>
+        <p>Tout est stocké dans <code>portabl-apps.json</code>, à côté de l'exe : dossier choisi, thème, favoris et compteurs. Rien n'est envoyé nulle part. Pour sauvegarder ou transférer vos réglages, copiez ce fichier ; pour repartir de zéro, supprimez-le.</p>
+        <p>Les favoris et compteurs sont liés au chemin de l'appli dans <code>apps\</code> : renommer ou déplacer une appli remet son compteur à zéro.</p>
+      </section>
+
+      <section id="m-faq">
+        <h3>Dépannage</h3>
+        <dl class="faq">
+          <dt>Mon appli n'apparaît pas</dt>
+          <dd>Vérifiez qu'elle est au premier niveau de <code>apps\</code> (ou dans un sous-dossier qui respecte les règles), que son extension est <code>.html</code>, <code>.htm</code> ou <code>.exe</code>, et qu'elle n'a pas <code>"hidden": true</code>. Puis <kbd>F5</kbd>.</dd>
+          <dt>Les infos de mon <code>.portal.json</code> sont ignorées</dt>
+          <dd>Le nom doit correspondre exactement (<code>Kanban.portal.json</code> pour <code>Kanban.html</code>) et le JSON doit être valide : guillemets doubles, pas de virgule après le dernier champ.</dd>
+          <dt>Une appli HTML s'ouvre dans un onglet au lieu d'une fenêtre</dt>
+          <dd>Le mode « Fenêtre dédiée » nécessite Microsoft Edge ; sans lui, le navigateur par défaut prend le relais.</dd>
+          <dt>Un exe ne se lance pas</dt>
+          <dd>Il est peut-être bloqué par la politique de sécurité du poste (SmartScreen, AppLocker), ou il lui manque des fichiers : rangez-le dans un sous-dossier avec ses dépendances.</dd>
+          <dt>Mes favoris et réglages ne sont pas gardés</dt>
+          <dd>Le dossier de l'exe est en lecture seule (ex. Program Files, partage réseau protégé). Placez le lanceur dans un dossier où vous pouvez écrire.</dd>
+          <dt>Le lanceur ne s'ouvre pas du tout</dt>
+          <dd>Il a besoin de WebView2, présent d'office sur Windows 11 et Windows 10 à jour. Sinon, l'exe a pu être bloqué au premier lancement : clic droit › Propriétés › Débloquer.</dd>
+        </dl>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <button class="teemo" id="teemo" tabindex="-1" aria-hidden="true">🍄</button>
+  <button class="marmot" id="marmot" tabindex="-1" aria-hidden="true">🐿️</button>
+
+  <script src="app.js"></script>
+</body>
+</html>

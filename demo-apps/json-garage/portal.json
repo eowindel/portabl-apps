@@ -1,0 +1,10 @@
+{
+  "name": "JSON Garage",
+  "description": "Visualiseur et formateur JSON avec diff.",
+  "version": "0.9.0",
+  "category": "Data",
+  "tags": ["json", "diff"],
+  "icon": "🔧",
+  "color": "#00f0ff",
+  "notes": "Démo : appli rangée dans un dossier, décrite par portal.json."
+}
