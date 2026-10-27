@@ -3,6 +3,12 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.7.0] - 2026-10-27
+
+### Ajouté
+- Les raccourcis Windows (`.lnk`) et internet (`.url`) deviennent des cartes, avec leur description, leur icône (ou celle de leur cible) et un filtre **Raccourcis**. Un clic les lance comme un double-clic dans l'explorateur : arguments et dossier de départ sont respectés.
+- Dans un sous-dossier sans `.exe`, un unique raccourci suffit à en faire une appli.
+
 ## [0.6.1] - 2026-10-27
 
 ### Modifié

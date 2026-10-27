@@ -1,6 +1,6 @@
 # 🏁 Porta[b]l Apps — garage d'applis
 
-Lanceur local, hors réseau, pour applis standalone `.html` et `.exe`.
+Lanceur local, hors réseau, pour applis standalone `.html` et `.exe`, et raccourcis Windows `.lnk` / `.url`.
 Un seul exe de ~4 Mo, sans installation (Tauri 2 + WebView2, déjà présent sur Windows 10/11).
 
 ## Utilisation
@@ -37,7 +37,8 @@ Par ordre de priorité :
    `icon` : emoji ou fichier image (`png`, `svg`, `ico`…). `entry` : seulement pour un dossier.
 2. **Balises du HTML** : `<title>`, favicon, `<meta name="description|author|version">`
    et `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
-3. **Infos de version de l'exe** : description, version, société, commentaires + icône.
+3. **Raccourcis** : un `.lnk` donne sa description et son icône (ou celle de sa cible), un `.url` son adresse et son icône ; le nom est celui du fichier.
+4. **Infos de version de l'exe** : description, version, société, commentaires + icône.
 
 ### Skill Claude Code
 

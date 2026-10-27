@@ -176,6 +176,7 @@ main { flex: 1; padding: 16px 32px 24px; }
   padding: 2px 7px; border-radius: 4px; background: var(--chip); color: var(--text);
 }
 .badge.exe { background: color-mix(in srgb, var(--accent-2) 30%, transparent); }
+.badge.lnk, .badge.url { background: color-mix(in srgb, var(--accent) 28%, transparent); }
 .badge.html { background: color-mix(in srgb, var(--accent-3) 30%, transparent); }
 
 .race-number { /* numéro de course en filigrane */

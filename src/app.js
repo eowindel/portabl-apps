@@ -209,6 +209,7 @@ function visibleApps() {
     if (state.filter === "fav" && !isFav(a)) return false;
     if (state.filter === "html" && a.kind !== "html") return false;
     if (state.filter === "exe" && a.kind !== "exe") return false;
+    if (state.filter === "link" && a.kind !== "lnk" && a.kind !== "url") return false;
     if (state.filter.startsWith("cat:") && a.category !== state.filter.slice(4)) return false;
     if (!words.length) return true;
     const hay = norm([a.name, a.description, a.category, a.author, a.tags.join(" "), a.id].join(" "));
@@ -237,7 +238,7 @@ function render() {
     const none = shownApps().length === 0 && state.filter !== "hidden";
     const searching = state.query.trim() !== "";
     const [icon, title, text] = none
-      ? ["📂", flavor().emptyTitle, `Déposez vos applis <code>.html</code> ou <code>.exe</code> dans<br><code>${esc(state.appsDir)}</code>`]
+      ? ["📂", flavor().emptyTitle, `Déposez vos applis (<code>.html</code>, <code>.exe</code>, raccourcis <code>.lnk</code> / <code>.url</code>) dans<br><code>${esc(state.appsDir)}</code>`]
       : searching
         ? ["🔎", "Aucun résultat", "Essayez une autre recherche ou un autre filtre."]
         : state.filter === "fav"
@@ -326,6 +327,7 @@ function renderFilters() {
     ["fav", flavor().fav, count(isFav)],
     ["html", "HTML", count((a) => a.kind === "html")],
     ["exe", "EXE", count((a) => a.kind === "exe")],
+    ["link", "Raccourcis", count((a) => a.kind === "lnk" || a.kind === "url")],
     ...cats.map((c) => ["cat:" + c, c, count((a) => a.category === c)]),
     ["hidden", "👁 Masquées", state.apps.length - apps.length],
   ];
@@ -418,7 +420,7 @@ function closeDrawer() {
 
 function renderDrawer(app) {
   const stat = statOf(app);
-  const sources = { sidecar: "fichier .portal.json", html: "balises du HTML", exe: "infos de version de l'exe" };
+  const sources = { sidecar: "fichier .portal.json", html: "balises du HTML", exe: "infos de version de l'exe", lnk: "raccourci Windows", url: "raccourci internet" };
   const facts = [
     ["Version", app.version],
     ["Auteur", app.author],
@@ -979,6 +981,7 @@ function mockApi() {
     a("json-garage/index.html", "html", "JSON Garage", { description: "Visualiseur et formateur JSON avec diff.", version: "0.9", category: "Data", tags: ["json"], icon: "🔧", sources: ["sidecar"] }),
     a("pomodoro.html", "html", "Pit Stop Timer", { description: "Minuteur pomodoro façon arrêt au stand.", category: "Productivité", icon: "⏱️", sources: ["html"] }),
     a("regex.html", "html", "Regex Drift", { description: "Testeur d'expressions régulières avec surlignage en direct.", version: "3.1", category: "Dev", tags: ["regex"], sources: ["html"] }),
+    a("intranet.url", "url", "Intranet RH", { description: "http://intranet.local/rh", category: "Outils", sources: ["url"] }),
     a("screenshot.exe", "exe", "SnapShot", { description: "Capture d'écran annotée.", version: "5.2.0.0", author: "ACME", category: "Outils", sources: ["exe"] }),
     a("notes.html", "html", "notes"),
     a("color-picker.html", "html", "Livrée — nuancier", { description: "Génère des palettes de couleurs pour vos thèmes.", category: "Design", icon: "🎨", color: "#ffd23f", sources: ["html"] }),

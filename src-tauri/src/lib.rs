@@ -120,15 +120,23 @@ fn open_html(s: &Settings, path: &Path) -> Result<(), String> {
 fn launch(id: String, path: String, state: State<AppState>) -> Result<Settings, String> {
     let mut s = state.0.lock().unwrap();
     let p = plain(&checked_path(&s, &path)?);
-    let is_exe = p.extension().map(|e| e.eq_ignore_ascii_case("exe")).unwrap_or(false);
-    if is_exe {
-        Command::new(&p)
-            .current_dir(p.parent().unwrap_or(Path::new(".")))
-            .creation_flags(CREATE_NEW_CONSOLE)
-            .spawn()
-            .map_err(|e| format!("Lancement impossible : {e}"))?;
-    } else {
-        open_html(&s, &p)?;
+    let ext = p.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    match ext.as_str() {
+        "exe" => {
+            Command::new(&p)
+                .current_dir(p.parent().unwrap_or(Path::new(".")))
+                .creation_flags(CREATE_NEW_CONSOLE)
+                .spawn()
+                .map_err(|e| format!("Lancement impossible : {e}"))?;
+        }
+        // Windows ouvre le raccourci lui-même : cible, arguments et dossier de départ sont respectés.
+        "lnk" | "url" => {
+            Command::new("explorer.exe")
+                .arg(&p)
+                .spawn()
+                .map_err(|e| format!("Lancement impossible : {e}"))?;
+        }
+        _ => open_html(&s, &p)?,
     }
     let stat = s.stats.entry(id).or_insert_with(Stat::default);
     stat.count += 1;

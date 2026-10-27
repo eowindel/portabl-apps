@@ -13,7 +13,7 @@ if (!arg) {
 
 const warnings = [];
 const warn = (msg) => warnings.push(msg);
-const kindOf = (p) => ({ ".html": "html", ".htm": "html", ".exe": "exe" })[extname(p).toLowerCase()];
+const kindOf = (p) => ({ ".html": "html", ".htm": "html", ".exe": "exe", ".lnk": "lnk", ".url": "url" })[extname(p).toLowerCase()];
 const stem = (p) => basename(p, extname(p));
 
 // ------------------------------------------------------------------ cible et .portal.json
@@ -33,9 +33,12 @@ if (statSync(target).isDirectory()) {
   } else if (existsSync(join(folder, "index.html"))) {
     target = join(folder, "index.html");
   } else {
-    const exes = readdirSync(folder).filter((f) => kindOf(f) === "exe");
-    if (exes.length !== 1) fail(`Dossier ignoré par le lanceur : ni "entry" dans portal.json, ni index.html, et ${exes.length} .exe (il en faut exactement un).`);
-    target = join(folder, exes[0]);
+    const files = readdirSync(folder);
+    const exes = files.filter((f) => kindOf(f) === "exe");
+    const links = files.filter((f) => ["lnk", "url"].includes(kindOf(f)));
+    const pick = exes.length ? exes : links;
+    if (pick.length !== 1) fail(`Dossier ignoré par le lanceur : ni "entry" dans portal.json, ni index.html, et ${exes.length} .exe / ${links.length} raccourci(s) (il en faut exactement un).`);
+    target = join(folder, pick[0]);
   }
 } else {
   metaFile = join(dirname(target), `${stem(target)}.portal.json`);
@@ -52,6 +55,8 @@ const sources = [];
 const detected = {};
 
 if (kind === "html") readHtml(target);
+else if (kind === "url") readUrl(target);
+else if (kind === "lnk") warn("Raccourci .lnk : description et icône sont lues par le lanceur (champ « Commentaire » du raccourci, icône ou cible) ; non vérifiées ici.");
 else warn("Exe : les ressources de version ne sont pas lues ici. Vérifiez-les avec (Get-Item <exe>).VersionInfo en PowerShell.");
 if (folder && (!sources.length || app.name.toLowerCase() === "index")) app.name = basename(folder);
 Object.assign(detected, app);
@@ -72,6 +77,7 @@ for (const k of ["name", "description", "version", "author", "category", "tags",
 console.log(`\nInfos lues : ${[...sources, ...(sidecar ? ["sidecar"] : [])].join(", ") || "nom du fichier uniquement"}`);
 if (!app.description) warn("Pas de description : la carte sera vide sous le titre.");
 if (kind === "html" && !detected.version && !sidecar?.version) warn("Pas de version déclarée.");
+if ((kind === "lnk" || kind === "url") && !sidecar?.name) warn(`Le nom de la carte est le nom du fichier (« ${stem(target)} »).`);
 if (app.name.length > 25) warn(`Nom long (${app.name.length} caractères) : il sera coupé sur la carte.`);
 if (/^v/i.test(app.version)) warn(`Version « ${app.version} » : retirez le « v », le lanceur l'ajoute.`);
 if (warnings.length) console.log(`\n⚠ ${warnings.join("\n⚠ ")}`);
@@ -176,6 +182,13 @@ function readHtml(file) {
     }
   }
   if (found) sources.push("html");
+}
+
+function readUrl(file) {
+  const text = readFileSync(file, "utf8").replace(/^﻿/, "");
+  const url = text.match(/^\s*url\s*=\s*(.+?)\s*$/im)?.[1];
+  if (url) { app.description = url; sources.push("url"); }
+  else warn("Pas de ligne URL= : le raccourci internet sera vide.");
 }
 
 function resolveIcon(base, value, origin) {

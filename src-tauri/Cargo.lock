@@ -2278,7 +2278,7 @@ dependencies = [
 
 [[package]]
 name = "portabl-apps"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "base64 0.22.1",
  "pelite",

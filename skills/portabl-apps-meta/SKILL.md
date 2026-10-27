@@ -1,6 +1,6 @@
 ---
 name: portabl-apps-meta
-description: Renseigne les infos d'une appli standalone (.html ou .exe) pour qu'elle s'affiche correctement dans le lanceur Porta[b]l Apps (nom, description, version, auteur, catégorie, tags, couleur, icône, notes). À utiliser quand on crée ou publie une appli destinée à Porta[b]l Apps, quand on change sa version, ou quand on demande de « remplir les infos portal », « préparer l'appli pour le portail » ou de vérifier ce que le lanceur va afficher.
+description: Renseigne les infos d'une appli standalone (.html, .exe ou raccourci .lnk / .url) pour qu'elle s'affiche correctement dans le lanceur Porta[b]l Apps (nom, description, version, auteur, catégorie, tags, couleur, icône, notes). À utiliser quand on crée ou publie une appli destinée à Porta[b]l Apps, quand on change sa version, ou quand on demande de « remplir les infos portal », « préparer l'appli pour le portail » ou de vérifier ce que le lanceur va afficher.
 ---
 
 # Infos d'appli pour Porta[b]l Apps
@@ -16,6 +16,7 @@ Porta[b]l Apps est un lanceur local, hors réseau, qui scanne un dossier `apps\`
 | Un `.exe` autonome | Posé à la racine de `apps\` |
 | Un `.exe` avec DLL, config… | Sous-dossier contenant **un seul** `.exe` |
 | Plusieurs `.exe` / point d'entrée non standard | Sous-dossier + `portal.json` avec `"entry"` |
+| Un raccourci Windows `.lnk` ou internet `.url` | Posé à la racine de `apps\` (ou seul raccourci d'un sous-dossier sans `.exe`) |
 
 Seul le premier niveau de `apps\` est scanné. Les sous-sous-dossiers ne sont jamais des applis.
 
@@ -76,6 +77,14 @@ Comment les renseigner selon la chaîne de build :
 - **AutoHotkey, Electron, etc.** : utiliser leur option de métadonnées Windows ; à défaut, `rcedit`.
 
 Un exe ne peut pas porter catégorie, tags, couleur, emoji ni notes : ces champs vont dans le `.portal.json`.
+
+### Raccourcis `.lnk` et `.url`
+
+Le nom de la carte est celui du fichier : nommer le raccourci comme on veut le voir affiché. Le lanceur lit :
+- `.lnk` : la description (champ « Commentaire » du raccourci) et l'icône du raccourci, sinon celle de sa cible ; sans description, le chemin de la cible sert de description.
+- `.url` : la ligne `URL=` comme description, et `IconFile=` pour l'icône.
+
+Un clic ouvre le raccourci comme dans l'explorateur. Catégorie, tags, couleur, notes et nom différent vont dans le `.portal.json` (`Mon outil.lnk` → `Mon outil.portal.json`).
 
 ### Le fichier `.portal.json`
 

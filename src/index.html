@@ -90,7 +90,7 @@
         <input id="set-dir" type="text" spellcheck="false">
         <button class="btn" id="set-dir-pick">Parcourir…</button>
       </div>
-      <p class="hint">Les fichiers <code>.html</code> / <code>.exe</code> à la racine, et les sous-dossiers contenant un <code>index.html</code>, un seul <code>.exe</code> ou un <code>portal.json</code>.</p>
+      <p class="hint">Les fichiers <code>.html</code>, <code>.exe</code> et les raccourcis <code>.lnk</code> / <code>.url</code> à la racine, et les sous-dossiers contenant un <code>index.html</code>, un seul <code>.exe</code> (ou un seul raccourci) ou un <code>portal.json</code>.</p>
 
       <h3>Thème</h3>
       <div class="theme-picker" id="theme-picker"></div>
@@ -195,7 +195,7 @@
 
       <section id="m-start">
         <h3>Démarrer</h3>
-        <p>Porta[b]l Apps est un lanceur pour vos applis autonomes <code>.html</code> et <code>.exe</code>. Rien à installer, aucun réseau nécessaire : copiez le dossier où vous voulez (bureau, clé USB, dossier perso) et lancez <code>portabl-apps.exe</code>.</p>
+        <p>Porta[b]l Apps est un lanceur pour vos applis autonomes <code>.html</code> et <code>.exe</code>, et vos raccourcis Windows. Rien à installer, aucun réseau nécessaire : copiez le dossier où vous voulez (bureau, clé USB, dossier perso) et lancez <code>portabl-apps.exe</code>.</p>
 <pre>PortablApps\
 ├── portabl-apps.exe     le lanceur
 ├── portabl-apps.json    vos réglages (créé tout seul)
@@ -207,13 +207,13 @@
         <h3>Ranger ses applis</h3>
         <p>Règle d'or : <b>une appli = une carte</b>. Seul le premier niveau du dossier <code>apps\</code> est regardé.</p>
         <h4>Un fichier seul, à la racine</h4>
-        <p>Chaque <code>.html</code>, <code>.htm</code> ou <code>.exe</code> posé directement dans <code>apps\</code> devient une carte. Les autres fichiers sont ignorés. Idéal pour les applis tout-en-un.</p>
+        <p>Chaque <code>.html</code>, <code>.htm</code>, <code>.exe</code> ou raccourci (<code>.lnk</code>, <code>.url</code>) posé directement dans <code>apps\</code> devient une carte. Les autres fichiers sont ignorés. Idéal pour les applis tout-en-un.</p>
         <h4>Un sous-dossier = une appli</h4>
         <p>Pour une appli qui a besoin de fichiers à côté d'elle (images, scripts, DLL, données). Le fichier lancé est, dans l'ordre :</p>
         <ol>
           <li>celui indiqué par <code>"entry"</code> dans un <code>portal.json</code> du dossier ;</li>
           <li>sinon <code>index.html</code> ;</li>
-          <li>sinon l'<b>unique</b> <code>.exe</code> du dossier.</li>
+          <li>sinon l'<b>unique</b> <code>.exe</code> du dossier (à défaut d'exe, l'unique raccourci <code>.lnk</code> / <code>.url</code>).</li>
         </ol>
         <p>Si aucune règle ne s'applique (deux exe sans <code>portal.json</code>, aucun <code>index.html</code>…), le dossier est ignoré. Les sous-sous-dossiers ne sont jamais pris pour des applis.</p>
 <pre>apps\
@@ -281,7 +281,9 @@
 &lt;meta name="portal:color" content="#00f0ff"&gt;
 &lt;meta name="portal:icon" content="🔧"&gt;
 &lt;meta name="portal:notes" content="…"&gt;</pre>
-        <h4>3. Les infos de l'exe</h4>
+        <h4>3. Les infos du raccourci</h4>
+        <p>Un raccourci Windows (<code>.lnk</code>) fournit sa description et son icône (ou celle de sa cible) ; un raccourci internet (<code>.url</code>) fournit son adresse et son icône. Le nom est celui du fichier : renommez le raccourci, ou utilisez l'éditeur ✏️. Un clic lance le raccourci comme un double-clic dans l'explorateur : arguments et dossier de départ sont respectés, la cible peut être n'importe où (dossier, document, site).</p>
+        <h4>4. Les infos de l'exe</h4>
         <p>Description, version, société, commentaires et icône, lues dans les propriétés du fichier (clic droit › Propriétés › Détails dans l'explorateur).</p>
         <p>À défaut de tout cela : le nom du fichier. La fiche détaillée d'une appli (ⓘ) indique d'où viennent ses infos.</p>
       </section>
@@ -291,7 +293,7 @@
         <ul>
           <li><b>Clic</b> sur une carte : lance l'appli.</li>
           <li><b>☆</b> : favori, toujours en tête de liste. <b>ⓘ</b> ou <b>clic droit</b> : fiche détaillée (chemin, taille, notes, bouton « afficher dans l'explorateur »).</li>
-          <li><b>Filtres</b> : tout, favoris, HTML, EXE et une pastille par catégorie. <b>Tri</b> : derniers lancés, plus lancés, A→Z, modifiés récemment.</li>
+          <li><b>Filtres</b> : tout, favoris, HTML, EXE, raccourcis et une pastille par catégorie. <b>Tri</b> : derniers lancés, plus lancés, A→Z, modifiés récemment.</li>
           <li>Le compteur de chaque carte indique combien de fois l'appli a été lancée, et quand.</li>
         </ul>
         <table class="keys">
@@ -334,7 +336,7 @@
         <h3>Dépannage</h3>
         <dl class="faq">
           <dt>Mon appli n'apparaît pas</dt>
-          <dd>Vérifiez qu'elle est au premier niveau de <code>apps\</code> (ou dans un sous-dossier qui respecte les règles), que son extension est <code>.html</code>, <code>.htm</code> ou <code>.exe</code>, et qu'elle n'est pas masquée (filtre <b>👁 Masquées</b>). Puis <kbd>F5</kbd>.</dd>
+          <dd>Vérifiez qu'elle est au premier niveau de <code>apps\</code> (ou dans un sous-dossier qui respecte les règles), que son extension est <code>.html</code>, <code>.htm</code>, <code>.exe</code>, <code>.lnk</code> ou <code>.url</code>, et qu'elle n'est pas masquée (filtre <b>👁 Masquées</b>). Puis <kbd>F5</kbd>.</dd>
           <dt>Les infos de mon <code>.portal.json</code> sont ignorées</dt>
           <dd>Le nom doit correspondre exactement (<code>Kanban.portal.json</code> pour <code>Kanban.html</code>) et le JSON doit être valide : guillemets doubles, pas de virgule après le dernier champ.</dd>
           <dt>Une appli HTML s'ouvre dans un onglet au lieu d'une fenêtre</dt>

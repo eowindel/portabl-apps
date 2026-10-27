@@ -104,16 +104,14 @@ fn folder_app(root: &Path, folder: &Path) -> Option<AppEntry> {
         Some(entry) => folder.join(entry),
         None if folder.join("index.html").is_file() => folder.join("index.html"),
         None => {
-            let exes: Vec<PathBuf> = std::fs::read_dir(folder)
-                .ok()?
-                .flatten()
-                .map(|e| e.path())
-                .filter(|p| kind_of(p) == Some("exe"))
-                .collect();
-            if exes.len() != 1 {
-                return None;
-            }
-            exes.into_iter().next()?
+            let files: Vec<PathBuf> = std::fs::read_dir(folder).ok()?.flatten().map(|e| e.path()).collect();
+            let only = |kinds: &[&str]| {
+                let found: Vec<&PathBuf> = files.iter().filter(|p| kind_of(p).is_some_and(|k| kinds.contains(&k))).collect();
+                (found.len() == 1).then(|| found[0].clone())
+            };
+            // Un seul .exe ; à défaut, un seul raccourci (.lnk / .url).
+            let has_exe = files.iter().any(|p| kind_of(p) == Some("exe"));
+            if has_exe { only(&["exe"])? } else { only(&["lnk", "url"])? }
         }
     };
     let kind = kind_of(&target)?;
@@ -155,6 +153,8 @@ fn build(root: &Path, path: &Path, kind: &'static str, meta_file: &Path, folder_
 
     match kind {
         "html" => read_html_meta(path, &mut app),
+        "lnk" => read_lnk_meta(path, &mut app),
+        "url" => read_url_meta(path, &mut app),
         _ => read_exe_meta(path, &mut app),
     }
     // Pour un dossier, le nom du dossier est un meilleur repli que « index ».
@@ -332,32 +332,187 @@ fn read_exe_meta(path: &Path, app: &mut AppEntry) {
         }
     }
 
-    // Première icône du fichier, plus grande résolution disponible.
+    if let Some(icon) = exe_icon(path) {
+        app.icon = icon;
+    }
+}
+
+/// Première icône d'un .exe / .dll, plus grande résolution disponible, en URL `data:`.
+fn exe_icon(path: &Path) -> Option<String> {
+    use pelite::{FileMap, PeFile};
+    let map = FileMap::open(path).ok()?;
+    let pe = PeFile::from_bytes(&map).ok()?;
+    let res = pe.resources().ok()?;
     let first_icon = res.icons().next();
-    if let Some(Ok((_, group))) = first_icon {
-        let size = |w: u8| if w == 0 { 256u32 } else { w as u32 };
-        if let Some(best) = group
-            .entries()
-            .iter()
-            .max_by_key(|e| (size(e.bWidth), e.wBitCount))
-        {
-            if let Ok(img) = group.image(best.nId) {
-                app.icon = if img.starts_with(b"\x89PNG") {
-                    format!("data:image/png;base64,{}", B64.encode(img))
-                } else {
-                    // Image BMP brute : on la ré-emballe dans un .ico à une seule entrée.
-                    let mut ico = Vec::with_capacity(22 + img.len());
-                    ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]);
-                    ico.extend_from_slice(&[best.bWidth, best.bHeight, best.bColorCount, 0]);
-                    ico.extend_from_slice(&1u16.to_le_bytes());
-                    ico.extend_from_slice(&best.wBitCount.to_le_bytes());
-                    ico.extend_from_slice(&(img.len() as u32).to_le_bytes());
-                    ico.extend_from_slice(&22u32.to_le_bytes());
-                    ico.extend_from_slice(img);
-                    format!("data:image/x-icon;base64,{}", B64.encode(&ico))
-                };
+    let Some(Ok((_, group))) = first_icon else { return None };
+    let size = |w: u8| if w == 0 { 256u32 } else { w as u32 };
+    let best = group.entries().iter().max_by_key(|e| (size(e.bWidth), e.wBitCount))?;
+    let img = group.image(best.nId).ok()?;
+    Some(if img.starts_with(b"\x89PNG") {
+        format!("data:image/png;base64,{}", B64.encode(img))
+    } else {
+        // Image BMP brute : on la ré-emballe dans un .ico à une seule entrée.
+        let mut ico = Vec::with_capacity(22 + img.len());
+        ico.extend_from_slice(&[0, 0, 1, 0, 1, 0]);
+        ico.extend_from_slice(&[best.bWidth, best.bHeight, best.bColorCount, 0]);
+        ico.extend_from_slice(&1u16.to_le_bytes());
+        ico.extend_from_slice(&best.wBitCount.to_le_bytes());
+        ico.extend_from_slice(&(img.len() as u32).to_le_bytes());
+        ico.extend_from_slice(&22u32.to_le_bytes());
+        ico.extend_from_slice(img);
+        format!("data:image/x-icon;base64,{}", B64.encode(&ico))
+    })
+}
+
+// ---------------------------------------------------------------- raccourcis
+
+/// Icône d'un fichier : image locale, ou première icône d'un .exe / .dll.
+fn icon_from_file(file: &Path) -> Option<String> {
+    let ext = file.extension()?.to_str()?.to_ascii_lowercase();
+    match ext.as_str() {
+        "exe" | "dll" | "scr" => exe_icon(file),
+        _ => resolve_icon(file.parent()?, file.file_name()?.to_str()?),
+    }
+}
+
+/// Remplace les `%VARIABLES%` d'un chemin (les raccourcis en contiennent souvent).
+fn expand_env(value: &str) -> String {
+    static VAR: OnceLock<Regex> = OnceLock::new();
+    let re = VAR.get_or_init(|| Regex::new(r"%([^%]+)%").unwrap());
+    re.replace_all(value, |c: &regex::Captures| std::env::var(&c[1]).unwrap_or_else(|_| c[0].to_string())).into_owned()
+}
+
+/// Ce qu'on lit d'un fichier `.lnk`.
+#[derive(Default)]
+struct Lnk {
+    description: Option<String>,
+    relative: Option<String>,
+    target: Option<String>,
+    icon: Option<String>,
+}
+
+/// Lecture minimale d'un .lnk (spécification MS-SHLLINK) : jamais de panique, `None` si le fichier est abîmé.
+fn parse_lnk(b: &[u8]) -> Option<Lnk> {
+    let u16_at = |o: usize| b.get(o..o + 2).map(|s| u16::from_le_bytes([s[0], s[1]]));
+    let u32_at = |o: usize| b.get(o..o + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]));
+    if u32_at(0)? != 0x4C {
+        return None;
+    }
+    let flags = u32_at(0x14)?;
+    let mut pos = 0x4C;
+    if flags & 0x01 != 0 {
+        pos += 2 + u16_at(pos)? as usize; // LinkTargetIDList
+    }
+    let mut target = None;
+    if flags & 0x02 != 0 {
+        let size = u32_at(pos)? as usize;
+        target = lnk_target(b.get(pos..pos.checked_add(size)?)?);
+        pos += size;
+    }
+    let unicode = flags & 0x80 != 0;
+    // StringData : nom, chemin relatif, dossier de travail, arguments, icône.
+    let mut strings: [Option<String>; 5] = Default::default();
+    for (i, bit) in [0x04u32, 0x08, 0x10, 0x20, 0x40].into_iter().enumerate() {
+        if flags & bit == 0 {
+            continue;
+        }
+        let n = u16_at(pos)? as usize;
+        pos += 2;
+        let len = if unicode { n * 2 } else { n };
+        let raw = b.get(pos..pos.checked_add(len)?)?;
+        pos += len;
+        strings[i] = Some(if unicode {
+            String::from_utf16_lossy(&raw.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect::<Vec<_>>())
+        } else {
+            raw.iter().map(|&c| c as char).collect()
+        });
+    }
+    let [description, relative, _, _, icon] = strings;
+    Some(Lnk { description, relative, target, icon })
+}
+
+/// Cible locale d'un raccourci, d'après sa section LinkInfo.
+fn lnk_target(info: &[u8]) -> Option<String> {
+    let u32_at = |o: usize| info.get(o..o + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]])).map(|v| v as usize);
+    let ansi = |o: usize| {
+        let tail = info.get(o..)?;
+        let end = tail.iter().position(|&c| c == 0)?;
+        Some(tail[..end].iter().map(|&c| c as char).collect::<String>())
+    };
+    let wide = |o: usize| {
+        let tail = info.get(o..)?;
+        let units: Vec<u16> = tail.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).take_while(|&u| u != 0).collect();
+        Some(String::from_utf16_lossy(&units))
+    };
+    let header = u32_at(4)?;
+    if u32_at(8)? & 1 == 0 {
+        return None; // cible sur le réseau : pas de chemin local
+    }
+    let (base, suffix) = if header >= 0x24 {
+        (wide(u32_at(28)?), wide(u32_at(32)?))
+    } else {
+        (ansi(u32_at(16)?), ansi(u32_at(24)?))
+    };
+    let (base, suffix) = (base.filter(|b| !b.is_empty()), suffix.unwrap_or_default());
+    let mut path = base?;
+    if !suffix.is_empty() {
+        if !path.ends_with('\\') {
+            path.push('\\');
+        }
+        path.push_str(&suffix);
+    }
+    Some(path)
+}
+
+fn read_lnk_meta(path: &Path, app: &mut AppEntry) {
+    let Ok(bytes) = std::fs::read(path) else { return };
+    let Some(link) = parse_lnk(&bytes) else { return };
+    let base = path.parent().unwrap_or(Path::new("."));
+    let target = link
+        .target
+        .or_else(|| link.relative.map(|r| base.join(expand_env(&r)).to_string_lossy().into_owned()))
+        .map(|t| expand_env(&t));
+    match link.description.map(|d| d.trim().to_string()).filter(|d| !d.is_empty()) {
+        Some(d) => app.description = d,
+        None => {
+            if let Some(t) = &target {
+                app.description = t.clone();
             }
         }
+    }
+    // Icône du raccourci, sinon celle de sa cible.
+    let own = link.icon.map(|i| expand_env(&i)).filter(|i| !i.trim().is_empty());
+    for source in own.into_iter().chain(target) {
+        let file = base.join(source.trim());
+        if let Some(icon) = icon_from_file(&file) {
+            app.icon = icon;
+            break;
+        }
+    }
+    app.sources.push("lnk".into());
+}
+
+/// Raccourci internet `.url` : fichier texte de type INI (`URL=`, `IconFile=`).
+fn read_url_meta(path: &Path, app: &mut AppEntry) {
+    let Ok(bytes) = std::fs::read(path) else { return };
+    let text = String::from_utf8_lossy(&bytes);
+    let (mut url, mut icon) = (None, None);
+    for line in text.trim_start_matches('\u{feff}').lines() {
+        let Some((key, value)) = line.split_once('=') else { continue };
+        let value = value.trim();
+        match key.trim().to_ascii_lowercase().as_str() {
+            "url" if !value.is_empty() => url = Some(value.to_string()),
+            "iconfile" if !value.is_empty() => icon = Some(expand_env(value)),
+            _ => {}
+        }
+    }
+    if let Some(u) = url {
+        app.description = u;
+        app.sources.push("url".into());
+    }
+    let base = path.parent().unwrap_or(Path::new("."));
+    if let Some(i) = icon.and_then(|i| icon_from_file(&base.join(i))) {
+        app.icon = i;
     }
 }
 
@@ -367,6 +522,8 @@ fn kind_of(path: &Path) -> Option<&'static str> {
     match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
         "html" | "htm" => Some("html"),
         "exe" => Some("exe"),
+        "lnk" => Some("lnk"),
+        "url" => Some("url"),
         _ => None,
     }
 }
@@ -437,6 +594,45 @@ mod tests {
         assert!(app.sources.contains(&"exe".to_string()));
         assert!(!app.version.is_empty());
         assert!(app.icon.starts_with("data:image/"));
+    }
+
+    /// .lnk minimal : en-tête, drapeaux « nom » + « Unicode », puis la chaîne de description.
+    fn fake_lnk(description: &str) -> Vec<u8> {
+        let mut b = vec![0u8; 0x4C];
+        b[0] = 0x4C;
+        b[0x14..0x18].copy_from_slice(&(0x04u32 | 0x80).to_le_bytes());
+        let units: Vec<u16> = description.encode_utf16().collect();
+        b.extend_from_slice(&(units.len() as u16).to_le_bytes());
+        for u in units {
+            b.extend_from_slice(&u.to_le_bytes());
+        }
+        b
+    }
+
+    #[test]
+    fn parses_lnk_description_and_survives_garbage() {
+        assert_eq!(parse_lnk(&fake_lnk("Outil perso é")).unwrap().description.as_deref(), Some("Outil perso é"));
+        assert!(parse_lnk(b"pas un raccourci").is_none());
+        let mut cut = fake_lnk("coupé");
+        cut.truncate(cut.len() - 3);
+        assert!(parse_lnk(&cut).is_none());
+    }
+
+    #[test]
+    fn shortcuts_become_cards() {
+        let root = std::env::temp_dir().join(format!("portabl-lnk-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("Dossier")).unwrap();
+        std::fs::write(root.join("Intranet.url"), "[InternetShortcut]\r\nURL=http://intranet/outil\r\n").unwrap();
+        std::fs::write(root.join("Outil.lnk"), fake_lnk("Mon outil")).unwrap();
+        std::fs::write(root.join("Dossier").join("Seul.lnk"), fake_lnk("Dans un dossier")).unwrap();
+        let apps = scan(&root);
+        std::fs::remove_dir_all(&root).unwrap();
+        let by_name = |n: &str| apps.iter().find(|a| a.name == n).unwrap_or_else(|| panic!("{n} absent"));
+        assert_eq!(by_name("Intranet").kind, "url");
+        assert_eq!(by_name("Intranet").description, "http://intranet/outil");
+        assert_eq!(by_name("Outil").kind, "lnk");
+        assert_eq!(by_name("Outil").description, "Mon outil");
+        assert_eq!(by_name("Seul").description, "Dans un dossier");
     }
 
     #[test]
