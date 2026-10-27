@@ -14,4 +14,8 @@
 
 - [ ] **L'étoile des favoris se superpose au titre de la carte** quand le nom de l'appli est long (ex. « 3DX Class Archit… »).
   - Les boutons ★ et ⓘ (`.card-btns`) sont positionnés par-dessus l'en-tête de la carte : le titre passe dessous au lieu de s'arrêter avant eux.
-  - Idée : réserver de la place à droite du titre (`padding-right` sur `.card-title`) pour que le nom soit tronqué avant les boutons.
+  - Réserver de la place à droite du titre est à éviter : les titres sont déjà tronqués, ça en couperait encore plus.
+  - Pistes pour gagner de la place au lieu d'en prendre :
+    - déplacer ★ et ⓘ dans le pied de la carte (à côté du compteur de tours), le titre reprend toute la largeur ;
+    - ou laisser le titre sur deux lignes (`-webkit-line-clamp: 2`) ;
+    - ou ne garder que ★ en haut à droite, collée au bord, et ouvrir la fiche par clic droit ou la touche I.
