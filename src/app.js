@@ -256,14 +256,10 @@ function cardHtml(app, i) {
   const num = f.number(state.apps.indexOf(app) + 1);
   return `
   <article class="card${app.hidden ? " is-hidden" : ""}" tabindex="0" data-id="${esc(app.id)}" style="--c:${esc(colorOf(app))};animation-delay:${Math.min(i, 20) * 35}ms">
-    <div class="card-btns">
-      <button class="mini ${fav ? "on" : ""}" data-act="fav" title="Favori (F)">${fav ? "★" : "☆"}</button>
-      <button class="mini" data-act="info" title="Détails (I)">ⓘ</button>
-    </div>
     <div class="card-head">
       ${iconHtml(app)}
       <div class="card-title">
-        <h3 title="${esc(app.name)}">${esc(app.name)}</h3>
+        <h3 title="${esc(app.name)}">${esc(app.name).replace(/([_\-.\/])/g, "$1<wbr>")}</h3>
         <div class="meta-line">
           <span class="badge ${app.kind}">${app.kind}</span>
           ${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}
@@ -274,8 +270,12 @@ function cardHtml(app, i) {
     ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
     ${app.tags.length ? `<div class="tags">${app.tags.slice(0, 5).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
     <div class="card-foot">
-      <span class="laps">🏁 <b>${stat.count}</b> ${esc(f.unit[stat.count > 1 ? 1 : 0])}</span>
-      <span>${esc(stat.last ? ago(stat.last) : f.never)}</span>
+      <span class="laps">🚀 <b>${stat.count}</b> ${esc(f.unit[stat.count > 1 ? 1 : 0])}</span>
+      <span class="last">${esc(stat.last ? ago(stat.last) : f.never)}</span>
+      <div class="card-btns">
+        <button class="mini ${fav ? "on" : ""}" data-act="fav" title="Favori (F)">${fav ? "★" : "☆"}</button>
+        <button class="mini" data-act="info" title="Détails (I)">ⓘ</button>
+      </div>
     </div>
     <span class="race-number">${num}</span>
   </article>`;

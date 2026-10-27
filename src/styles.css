@@ -165,7 +165,9 @@ main { padding: 16px 32px 64px; }
 .card-title { min-width: 0; flex: 1; }
 .card-title h3 {
   margin: 2px 0 4px; font: 700 16px/1.2 var(--font-display); letter-spacing: .03em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* sur deux lignes au plus, à la limite des mots (et après _ - . grâce aux <wbr>) */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  overflow-wrap: normal; word-break: normal; hyphens: manual;
 }
 .meta-line { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--muted); }
 .badge {
@@ -185,12 +187,14 @@ main { padding: 16px 32px 64px; }
 }
 .tags { display: flex; gap: 5px; flex-wrap: wrap; }
 .tag { font-size: 11px; color: var(--c); }
-.card-foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); }
+.card-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.card-foot .laps { flex: none; }
+.card-foot .last { flex: 1; min-width: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .laps b { color: var(--text); font-weight: 600; }
 
-.card-btns { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+.card-btns { flex: none; display: flex; gap: 2px; margin: -4px -6px -4px 0; }
 .mini {
-  width: 30px; height: 30px; border-radius: 8px; border: 0; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 8px; border: 0; cursor: pointer;
   background: transparent; color: var(--muted); font-size: 15px; opacity: 0; transition: opacity .15s, background .15s, color .15s;
 }
 .card:hover .mini, .card:focus-visible .mini, .mini.on { opacity: 1; }

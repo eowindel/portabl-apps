@@ -3,6 +3,13 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.1] - 2026-10-27
+
+### Modifié
+- Les boutons ★ et ⓘ passent dans le pied de la carte : ils ne se superposent plus au titre.
+- Un titre trop long passe sur deux lignes, à la limite des mots (ou après `_`, `-`, `.`), au lieu d'être coupé tout de suite.
+- Le drapeau à damier du compteur de tours devient une fusée 🚀, plus neutre selon les thèmes.
+
 ## [0.5.0] - 2026-10-27
 
 ### Ajouté
