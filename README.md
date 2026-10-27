@@ -72,6 +72,10 @@ npm run build    # → src-tauri/target/release/portabl-apps.exe
 3. `npm run build`, puis copier `src-tauri/target/release/portabl-apps.exe` dans le dossier à distribuer.
 4. Commit + tag : `git tag vx.y.z`.
 
+## Licence
+
+[MIT](LICENSE) © 2026 casarou. Les polices embarquées dans `src/fonts/` sont sous licence OFL (voir les fichiers `LICENSE-*.txt`).
+
 ## Sur un PC d'entreprise
 
 - WebView2 est requis : il est présent d'office sur Windows 11 et sur les Windows 10 à jour.
