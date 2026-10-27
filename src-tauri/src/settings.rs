@@ -23,7 +23,6 @@ pub struct Settings {
     pub browser_path: String,
     /// Arguments du navigateur perso ; `{url}` est remplacé par l'URL du fichier.
     pub browser_args: String,
-    pub sound: bool,
     pub favorites: Vec<String>,
     pub stats: HashMap<String, Stat>,
 }
@@ -36,7 +35,6 @@ impl Default for Settings {
             browser_mode: "app".into(),
             browser_path: String::new(),
             browser_args: "{url}".into(),
-            sound: true,
             favorites: Vec::new(),
             stats: HashMap::new(),
         }

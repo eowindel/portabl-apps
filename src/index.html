@@ -69,6 +69,10 @@
     </div>
   </main>
 
+  <footer class="app-footer">
+    © 2026 casarou · <button type="button" id="btn-license">Licence MIT</button>
+  </footer>
+
   <!-- Fiche détaillée -->
   <aside class="drawer" id="drawer" aria-hidden="true">
     <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
@@ -101,9 +105,6 @@
         <input id="set-bpath" type="text" placeholder="C:\Program Files\Google\Chrome\Application\chrome.exe" spellcheck="false">
         <input id="set-bargs" type="text" placeholder="--app={url}" spellcheck="false">
       </div>
-
-      <h3>Ambiance</h3>
-      <label class="toggle"><input type="checkbox" id="set-sound"> Bruit de moteur au lancement</label>
 
       <p class="hint" style="margin-top:24px">Comment ranger et décrire ses applis ? <button class="btn" id="settings-help">📖 Mode d'emploi</button></p>
     </div>
@@ -156,6 +157,16 @@
         <button type="submit" class="btn primary">Enregistrer</button>
       </div>
     </form>
+  </div>
+
+  <!-- Licences (embarquées dans l'exe) -->
+  <div class="modal" id="license" aria-hidden="true">
+    <div class="modal-card manual-card">
+      <button class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+      <h2>Licences</h2>
+      <p class="hint">Porta[b]l Apps est un logiciel libre sous licence MIT, © 2026 casarou. Les polices embarquées gardent leur propre licence.</p>
+      <div id="license-body"></div>
+    </div>
   </div>
 
   <!-- Nouveautés (CHANGELOG.md embarqué dans l'exe) -->
@@ -302,7 +313,7 @@
         <h3>Réglages ⚙</h3>
         <ul>
           <li><b>Dossier des applis</b> : n'importe quel dossier (local, réseau, clé USB). Chemin relatif = relatif à l'exe.</li>
-          <li><b>Thème</b> : change l'ambiance, les textes et le son. Chaque thème a sa personnalité, prenez le temps de les explorer…</li>
+          <li><b>Thème</b> : change l'ambiance et les textes. Chaque thème a sa personnalité, prenez le temps de les explorer…</li>
           <li><b>Ouverture des applis HTML</b> :
             <ul>
               <li><i>Fenêtre dédiée</i> (par défaut) : chaque appli s'ouvre dans sa propre fenêtre Edge, sans onglets ni barre d'adresse. Pratique pour en ouvrir plusieurs.</li>
@@ -310,7 +321,6 @@
               <li><i>Personnalisé</i> : le navigateur de votre choix. <code>{url}</code> est remplacé par l'adresse du fichier, par ex. <code>--app={url}</code> pour Chrome.</li>
             </ul>
           </li>
-          <li><b>Son</b> : active ou coupe les sons au lancement.</li>
         </ul>
       </section>
 

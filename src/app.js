@@ -15,7 +15,6 @@ const THEMES = [
       unit: ["CS", "CS"],
       never: "jamais pick",
       emptyTitle: "Bienvenue dans la Faille",
-      sound: "chime",
       welcome: "Bienvenue dans la Faille de l'invocateur !",
       go: lolAnnouncer,
     },
@@ -30,7 +29,6 @@ const THEMES = [
       unit: ["sortie", "sorties"],
       never: "jamais parcourue",
       emptyTitle: "Refuge vide",
-      sound: "cowbell",
       welcome: "Salut l'ami ! Bonne rando 🥾",
       number: (n) => `${(1000 + n * 263).toLocaleString("fr-FR")} m`,
       go: summitGuide,
@@ -38,7 +36,7 @@ const THEMES = [
   },
 ];
 
-// Textes et sons propres à chaque thème ; un thème ne redéfinit que ce qu'il veut.
+// Textes propres à chaque thème ; un thème ne redéfinit que ce qu'il veut.
 const DEFAULT_FLAVOR = {
   tagline: "garage d'applis",
   search: "Rechercher une machine…",
@@ -47,7 +45,6 @@ const DEFAULT_FLAVOR = {
   unit: ["tour", "tours"],
   never: "jamais lancée",
   emptyTitle: "Garage vide",
-  sound: "vroom",
   welcome: "",
   number: (n) => String(n).padStart(2, "0"),
   go: (app) => ({ text: `GO ! ${app.name}` }),
@@ -259,6 +256,12 @@ function render() {
   }
 }
 
+const lapsHtml = (app) => {
+  const { count } = statOf(app);
+  return `🚀 <b>${count}</b> ${esc(flavor().unit[count > 1 ? 1 : 0])}`;
+};
+const lastText = (app) => statOf(app).last ? ago(statOf(app).last) : flavor().never;
+
 function cardHtml(app, i) {
   const stat = statOf(app);
   const fav = isFav(app);
@@ -280,8 +283,8 @@ function cardHtml(app, i) {
     ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
     ${app.tags.length ? `<div class="tags">${app.tags.slice(0, 5).map((t) => `<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
     <div class="card-foot">
-      <span class="laps">🚀 <b>${stat.count}</b> ${esc(f.unit[stat.count > 1 ? 1 : 0])}</span>
-      <span class="last">${esc(stat.last ? ago(stat.last) : f.never)}</span>
+      <span class="laps">${lapsHtml(app)}</span>
+      <span class="last">${esc(lastText(app))}</span>
       <div class="card-btns">
         <button class="mini ${fav ? "on" : ""}" data-act="fav" title="Favori (F)">${fav ? "★" : "☆"}</button>
         <button class="mini" data-act="info" title="Détails (I)">ⓘ</button>
@@ -345,7 +348,6 @@ async function launch(app, card) {
     return;
   }
   const f = flavor();
-  if (state.settings.sound) ({ chime, cowbell }[f.sound] || vroom)();
   document.body.classList.remove("revving");
   void document.body.offsetWidth;
   document.body.classList.add("revving");
@@ -354,11 +356,18 @@ async function launch(app, card) {
     card.classList.remove("launch");
     void card.offsetWidth;
     card.classList.add("launch");
-    card.addEventListener("animationend", () => { card.classList.remove("launch"); refreshCard(app); }, { once: true });
+    card.addEventListener("animationend", () => card.classList.remove("launch"), { once: true });
+    updateFoot(app, card);
   }
   renderGauges();
   const msg = f.go(app);
   toast(msg.text, false, msg.kill ? "kill" : "");
+}
+
+// Compteur et date de dernier tour, mis à jour sur place : la carte garde son animation de lancement.
+function updateFoot(app, card) {
+  card.querySelector(".laps").innerHTML = lapsHtml(app);
+  card.querySelector(".last").textContent = lastText(app);
 }
 
 function refreshCard(app) {
@@ -391,112 +400,6 @@ function toast(msg, error = false, extra = "") {
   t.className = `toast show ${error ? "error" : ""} ${extra}`;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), error ? 4000 : 1800);
-}
-
-// Cloche de vache : deux ondes carrées dissonantes filtrées, façon cloche d'alpage.
-function cowbell() {
-  try {
-    audio ??= new AudioContext();
-    const t = audio.currentTime;
-    for (const delay of [0, 0.32]) {
-      const bp = audio.createBiquadFilter();
-      bp.type = "bandpass";
-      bp.frequency.value = 2600;
-      bp.Q.value = 1.2;
-      const g = audio.createGain();
-      g.gain.setValueAtTime(0.0001, t + delay);
-      g.gain.exponentialRampToValueAtTime(0.25, t + delay + 0.005);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.5);
-      bp.connect(g).connect(audio.destination);
-      for (const freq of [540, 800]) {
-        const o = audio.createOscillator();
-        o.type = "square";
-        o.frequency.value = freq;
-        o.connect(bp);
-        o.start(t + delay);
-        o.stop(t + delay + 0.55);
-      }
-    }
-  } catch { /* pas d'audio : tant pis */ }
-}
-
-// Sifflement d'alerte de la marmotte : une note aiguë qui glisse vers le bas.
-function whistle() {
-  try {
-    audio ??= new AudioContext();
-    const t = audio.currentTime;
-    const o = audio.createOscillator();
-    const g = audio.createGain();
-    o.type = "sine";
-    o.frequency.setValueAtTime(3200, t);
-    o.frequency.exponentialRampToValueAtTime(2200, t + 0.35);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
-    o.connect(g).connect(audio.destination);
-    o.start(t);
-    o.stop(t + 0.42);
-  } catch { /* pas d'audio : tant pis */ }
-}
-
-// Carillon « hextech » : petit arpège cristallin à la place du moteur.
-function chime() {
-  try {
-    audio ??= new AudioContext();
-    const t = audio.currentTime;
-    [659.25, 987.77, 1318.5, 1975.5].forEach((freq, i) => {
-      const o = audio.createOscillator();
-      const g = audio.createGain();
-      o.type = "sine";
-      o.frequency.value = freq;
-      const start = t + i * 0.07;
-      g.gain.setValueAtTime(0.0001, start);
-      g.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.6);
-      o.connect(g).connect(audio.destination);
-      o.start(start);
-      o.stop(start + 0.65);
-    });
-  } catch { /* pas d'audio : tant pis */ }
-}
-
-// Bruit de moteur synthétisé (aucun fichier audio nécessaire).
-let audio;
-function vroom() {
-  try {
-    audio ??= new AudioContext();
-    const t = audio.currentTime;
-    const out = audio.createGain();
-    out.gain.setValueAtTime(0.0001, t);
-    out.gain.exponentialRampToValueAtTime(0.18, t + 0.05);
-    out.gain.setValueAtTime(0.18, t + 0.45);
-    out.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
-    const lp = audio.createBiquadFilter();
-    lp.type = "lowpass";
-    lp.frequency.setValueAtTime(600, t);
-    lp.frequency.linearRampToValueAtTime(1800, t + 0.45);
-    lp.connect(out).connect(audio.destination);
-    for (const [type, mul, detune] of [["sawtooth", 1, 0], ["square", 0.5, 8]]) {
-      const o = audio.createOscillator();
-      o.type = type;
-      o.detune.value = detune;
-      o.frequency.setValueAtTime(55 * mul, t);
-      o.frequency.exponentialRampToValueAtTime(70 * mul, t + 0.12);   // ralenti
-      o.frequency.exponentialRampToValueAtTime(240 * mul, t + 0.45);  // coup de gaz
-      o.frequency.exponentialRampToValueAtTime(90 * mul, t + 0.9);    // retombée
-      // petit trémolo façon bicylindre
-      const lfo = audio.createOscillator();
-      const lfoGain = audio.createGain();
-      lfo.frequency.value = 28;
-      lfoGain.gain.value = 0.35;
-      const g = audio.createGain();
-      g.gain.value = 0.6;
-      lfo.connect(lfoGain).connect(g.gain);
-      o.connect(g).connect(lp);
-      o.start(t); lfo.start(t);
-      o.stop(t + 0.95); lfo.stop(t + 0.95);
-    }
-  } catch { /* pas d'audio : tant pis */ }
 }
 
 // ------------------------------------------------------------------ fiche détaillée
@@ -559,7 +462,6 @@ function openSettings() {
   $("#set-dir").value = s.appsDir || state.appsDir;
   $("#set-bpath").value = s.browserPath || "";
   $("#set-bargs").value = s.browserArgs || "{url}";
-  $("#set-sound").checked = !!s.sound;
   for (const r of document.querySelectorAll("input[name=bmode]")) r.checked = r.value === s.browserMode;
   $(".custom-browser").hidden = s.browserMode !== "custom";
   renderThemePicker();
@@ -615,7 +517,6 @@ for (const r of document.querySelectorAll("input[name=bmode]")) {
 }
 $("#set-bpath").addEventListener("change", (e) => savePrefs({ browserPath: e.target.value.trim() }));
 $("#set-bargs").addEventListener("change", (e) => savePrefs({ browserArgs: e.target.value.trim() }));
-$("#set-sound").addEventListener("change", (e) => savePrefs({ sound: e.target.checked }));
 
 // ------------------------------------------------------------------ mode d'emploi
 const manual = $("#manual");
@@ -844,6 +745,26 @@ function closeChangelog() {
 }
 
 versionBadge.addEventListener("click", openChangelog);
+
+// ------------------------------------------------------------------ licences
+const license = $("#license");
+function openLicense() {
+  closeSettings();
+  closeManual();
+  closeChangelog();
+  $("#license-body").innerHTML = (about.licenses || []).map((l, i) =>
+    `<details ${i === 0 ? "open" : ""}><summary>${esc(l.name)}</summary><pre>${esc(l.text)}</pre></details>`).join("");
+  license.classList.add("open");
+  license.setAttribute("aria-hidden", "false");
+}
+function closeLicense() {
+  license.classList.remove("open");
+  license.setAttribute("aria-hidden", "true");
+}
+$("#btn-license").addEventListener("click", openLicense);
+license.addEventListener("click", (e) => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) closeLicense();
+});
 changelog.addEventListener("click", (e) => {
   if (e.target === e.currentTarget || e.target.closest("[data-close]")) closeChangelog();
 });
@@ -917,7 +838,6 @@ function marmotPeek() {
 }
 setTimeout(marmotPeek, 15_000);
 marmot.addEventListener("click", () => {
-  if (state.settings.sound) whistle();
   marmot.classList.remove("peek");
   toast("Fiiiiuuu ! La marmotte a donné l'alerte 🦅");
 });
@@ -993,6 +913,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (e.key === "Escape") {
+    if (isOpen(license)) return closeLicense();
     if (isOpen(changelog)) return closeChangelog();
     if (isOpen(manual)) return closeManual();
     if ($("#settings").classList.contains("open")) return closeSettings();
@@ -1001,7 +922,7 @@ document.addEventListener("keydown", (e) => {
     search.blur();
     return;
   }
-  if ($("#settings").classList.contains("open") || isOpen(manual) || isOpen(changelog)) return;
+  if ($("#settings").classList.contains("open") || isOpen(manual) || isOpen(changelog) || isOpen(license)) return;
 
   const card = e.target.closest?.(".card");
   if (e.target === search && (e.key === "ArrowDown" || e.key === "Enter")) {
@@ -1038,7 +959,7 @@ load();
 function mockApi() {
   const day = 864e5, now = Date.now();
   const settings = {
-    appsDir: "", theme: store("mock-theme") || "arcade", browserMode: "app", browserPath: "", browserArgs: "{url}", sound: true,
+    appsDir: "", theme: store("mock-theme") || "arcade", browserMode: "app", browserPath: "", browserArgs: "{url}",
     favorites: ["kanban.html"],
     stats: { "kanban.html": { count: 42, last: now - 3e5 }, "csv-lab.exe": { count: 17, last: now - day }, "json-garage/index.html": { count: 5, last: now - 9 * day } },
   };
@@ -1092,6 +1013,6 @@ function mockApi() {
       }
       app.hidden = !!app.sidecar.hidden;
     },
-    about: async () => ({ version: "0.0.0-dev", changelog: "## [0.0.0-dev] - 2026-01-01\n\n### Ajouté\n- Aperçu navigateur : le vrai changelog n'est lu que dans l'appli." }),
+    about: async () => ({ version: "0.0.0-dev", licenses: [{ name: "Porta[b]l Apps — MIT", text: "(texte lu dans l'appli)" }], changelog: "## [0.0.0-dev] - 2026-01-01\n\n### Ajouté\n- Aperçu navigateur : le vrai changelog n'est lu que dans l'appli." }),
   };
 }

@@ -34,7 +34,6 @@ struct Prefs {
     browser_mode: Option<String>,
     browser_path: Option<String>,
     browser_args: Option<String>,
-    sound: Option<bool>,
 }
 
 fn now_ms() -> u64 {
@@ -61,7 +60,6 @@ fn update_prefs(prefs: Prefs, state: State<AppState>) -> Result<Settings, String
     if let Some(v) = prefs.browser_mode { s.browser_mode = v }
     if let Some(v) = prefs.browser_path { s.browser_path = v }
     if let Some(v) = prefs.browser_args { s.browser_args = v }
-    if let Some(v) = prefs.sound { s.sound = v }
     s.save()?;
     Ok(s.clone())
 }
@@ -270,17 +268,34 @@ async fn pick_icon(app: tauri::AppHandle, path: String) -> Result<Option<IconPic
 }
 
 #[derive(Serialize)]
+struct License {
+    name: &'static str,
+    text: &'static str,
+}
+
+#[derive(Serialize)]
 struct About {
     version: &'static str,
     changelog: &'static str,
+    /// Licence de l'appli, puis celles des polices embarquées (OFL : elle doit voyager avec elles).
+    licenses: Vec<License>,
 }
 
-/// Version (celle de Cargo.toml) et changelog, embarqués dans l'exe à la compilation.
+/// Version (celle de Cargo.toml), changelog et licences, embarqués dans l'exe à la compilation.
 #[tauri::command]
 fn about() -> About {
+    let license = |name, text| License { name, text };
     About {
         version: env!("CARGO_PKG_VERSION"),
         changelog: include_str!("../../CHANGELOG.md"),
+        licenses: vec![
+            license("Porta[b]l Apps — MIT", include_str!("../../LICENSE")),
+            license("Orbitron — SIL OFL 1.1", include_str!("../../src/fonts/LICENSE-orbitron.txt")),
+            license("Chakra Petch — SIL OFL 1.1", include_str!("../../src/fonts/LICENSE-chakra-petch.txt")),
+            license("Press Start 2P — SIL OFL 1.1", include_str!("../../src/fonts/LICENSE-press-start-2p.txt")),
+            license("Cinzel — SIL OFL 1.1", include_str!("../../src/fonts/LICENSE-cinzel.txt")),
+            license("Oswald — SIL OFL 1.1", include_str!("../../src/fonts/LICENSE-oswald.txt")),
+        ],
     }
 }
 
