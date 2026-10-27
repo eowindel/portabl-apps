@@ -11,3 +11,7 @@
 - [ ] **Mentionner la licence et casarou en pied de page de l'appli.**
   - Une ligne discrète en bas de la fenêtre, du genre « © 2026 casarou · licence MIT », avec un lien vers le texte de la licence (par exemple dans la fenêtre « Nouveautés » ou une fenêtre « À propos »).
   - La licence MIT est dans `LICENSE` ; les polices embarquées ont leurs propres licences OFL dans `src/fonts/` (à citer aussi).
+
+- [ ] **L'étoile des favoris se superpose au titre de la carte** quand le nom de l'appli est long (ex. « 3DX Class Archit… »).
+  - Les boutons ★ et ⓘ (`.card-btns`) sont positionnés par-dessus l'en-tête de la carte : le titre passe dessous au lieu de s'arrêter avant eux.
+  - Idée : réserver de la place à droite du titre (`padding-right` sur `.card-title`) pour que le nom soit tronqué avant les boutons.
