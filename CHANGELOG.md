@@ -3,6 +3,14 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.0] - 2026-10-27
+
+### Ajouté
+- Éditeur de fiche : bouton **✏️ Modifier** dans la fiche détaillée ou touche **E** sur une carte. Il écrit le `.portal.json` à votre place, avec un aperçu de la carte en direct.
+- Les valeurs détectées (balises HTML, infos de l'exe) s'affichent en grisé : seul ce que vous changez est enregistré.
+- Choix d'une image pour l'icône ; une image prise ailleurs est copiée à côté de l'appli.
+- Filtre **👁 Masquées** pour retrouver et réafficher les applis masquées.
+
 ## [0.4.0] - 2026-10-27
 
 ### Ajouté

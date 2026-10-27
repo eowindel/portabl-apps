@@ -109,6 +109,8 @@ const api = window.__TAURI__ ? {
   openAppsDir: () => window.__TAURI__.core.invoke("open_apps_dir"),
   pickFolder: () => window.__TAURI__.core.invoke("pick_folder"),
   about: () => window.__TAURI__.core.invoke("about"),
+  saveMeta: (app, fields) => window.__TAURI__.core.invoke("save_meta", { path: app.path, fields }),
+  pickIcon: (app) => window.__TAURI__.core.invoke("pick_icon", { path: app.path }),
 } : mockApi();
 
 // ------------------------------------------------------------------ état
@@ -206,6 +208,7 @@ function visibleApps() {
   const q = norm(state.query).trim();
   const words = q.split(/\s+/).filter(Boolean);
   let list = state.apps.filter((a) => {
+    if (a.hidden !== (state.filter === "hidden")) return false;
     if (state.filter === "fav" && !isFav(a)) return false;
     if (state.filter === "html" && a.kind !== "html") return false;
     if (state.filter === "exe" && a.kind !== "exe") return false;
@@ -233,7 +236,7 @@ function render() {
   const empty = $("#empty");
   empty.hidden = list.length > 0;
   if (!list.length) {
-    const none = state.apps.length === 0;
+    const none = shownApps().length === 0 && state.filter !== "hidden";
     $("#empty-title").textContent = none ? flavor().emptyTitle : "Aucune machine trouvée";
     $("#empty-text").innerHTML = none
       ? `Déposez vos applis <code>.html</code> ou <code>.exe</code> dans<br><code>${esc(state.appsDir)}</code>`
@@ -252,7 +255,7 @@ function cardHtml(app, i) {
   const f = flavor();
   const num = f.number(state.apps.indexOf(app) + 1);
   return `
-  <article class="card" tabindex="0" data-id="${esc(app.id)}" style="--c:${esc(colorOf(app))};animation-delay:${Math.min(i, 20) * 35}ms">
+  <article class="card${app.hidden ? " is-hidden" : ""}" tabindex="0" data-id="${esc(app.id)}" style="--c:${esc(colorOf(app))};animation-delay:${Math.min(i, 20) * 35}ms">
     <div class="card-btns">
       <button class="mini ${fav ? "on" : ""}" data-act="fav" title="Favori (F)">${fav ? "★" : "☆"}</button>
       <button class="mini" data-act="info" title="Détails (I)">ⓘ</button>
@@ -282,7 +285,7 @@ function renderGauges() {
   const stats = Object.values(state.settings.stats);
   const dayStart = new Date().setHours(0, 0, 0, 0);
   // Approximation volontaire : on ne garde que la date du dernier tour, donc « aujourd'hui » = applis lancées aujourd'hui.
-  animateNumber($("#g-apps"), state.apps.length);
+  animateNumber($("#g-apps"), shownApps().length);
   animateNumber($("#g-today"), stats.filter((s) => s.last >= dayStart).length);
   animateNumber($("#g-total"), stats.reduce((n, s) => n + s.count, 0));
 }
@@ -292,22 +295,26 @@ function animateNumber(el, to) {
   if (from === to) return;
   const t0 = performance.now();
   const step = (t) => {
-    const k = Math.min(1, (t - t0) / 500);
+    const k = Math.min(1, Math.max(0, (t - t0) / 500));
     el.textContent = Math.round(from + (to - from) * (1 - (1 - k) ** 3));
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
+const shownApps = () => state.apps.filter((a) => !a.hidden);
+
 function renderFilters() {
-  const count = (f) => state.apps.filter(f).length;
-  const cats = [...new Set(state.apps.map((a) => a.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  const apps = shownApps();
+  const count = (f) => apps.filter(f).length;
+  const cats = [...new Set(apps.map((a) => a.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
   const chips = [
-    ["all", "Tout", state.apps.length],
+    ["all", "Tout", apps.length],
     ["fav", flavor().fav, count(isFav)],
     ["html", "HTML", count((a) => a.kind === "html")],
     ["exe", "EXE", count((a) => a.kind === "exe")],
     ...cats.map((c) => ["cat:" + c, c, count((a) => a.category === c)]),
+    ["hidden", "👁 Masquées", state.apps.length - apps.length],
   ];
   if (!chips.some(([id]) => id === state.filter)) state.filter = "all";
   $("#filters").innerHTML = chips
@@ -513,11 +520,12 @@ function renderDrawer(app) {
   $("#drawer-body").innerHTML = `
     <div style="--c:${esc(colorOf(app))}">${iconHtml(app)}</div>
     <h2>${esc(app.name)}</h2>
-    <div class="meta-line"><span class="badge ${app.kind}">${app.kind}</span>${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}</div>
+    <div class="meta-line"><span class="badge ${app.kind}">${app.kind}</span>${app.hidden ? "<span>· masquée</span>" : ""}${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}</div>
     ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
     <div class="drawer-actions">
       <button class="btn primary" data-dact="launch">▶ Lancer</button>
       <button class="btn" data-dact="fav">${isFav(app) ? "★ Favori" : "☆ Favori"}</button>
+      <button class="btn" data-dact="edit" title="Modifier la fiche (E)">✏️ Modifier</button>
       <button class="btn" data-dact="reveal" title="Afficher dans l'explorateur">📂</button>
     </div>
     <dl class="facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
@@ -531,6 +539,7 @@ $("#drawer").addEventListener("click", async (e) => {
   if (!act || !app) return;
   if (act === "launch") launch(app);
   if (act === "fav") toggleFav(app);
+  if (act === "edit") openEditor(app);
   if (act === "reveal") api.reveal(app).catch((err) => toast(String(err), true));
 });
 
@@ -623,6 +632,149 @@ manual.addEventListener("click", (e) => {
   }
 });
 $("#btn-help").addEventListener("click", openManual);
+
+// ------------------------------------------------------------------ éditeur de fiche
+// Le formulaire ne contient que ce qui est écrit dans le .portal.json ; un champ vide
+// laisse la place à la valeur détectée (balises HTML, infos de l'exe), affichée en grisé.
+const editor = $("#editor");
+const editorForm = $("#editor-form");
+const TEXT_FIELDS = ["name", "description", "version", "author", "category", "color", "icon", "notes", "entry"];
+const ed = { app: null, tags: [], icon: { value: "", preview: "" } };
+const field = (name) => editorForm.elements[name];
+
+function openEditor(app) {
+  const raw = app.sidecar || {};
+  const d = app.detected;
+  ed.app = app;
+  for (const name of TEXT_FIELDS) {
+    field(name).value = typeof raw[name] === "string" ? raw[name] : "";
+    field(name).placeholder = d[name] || "";
+  }
+  field("entry").placeholder = app.path.split(/[\\/]/).pop();
+  field("color").placeholder = "auto";
+  field("icon").placeholder = d.icon.startsWith("data:") ? "(icône détectée)" : d.icon || "emoji ou image.png";
+  field("hidden").checked = raw.hidden === true;
+  const tags = Array.isArray(raw.tags) ? raw.tags.map(String) : typeof raw.tags === "string" ? raw.tags.split(",") : [];
+  ed.tags = tags.map((t) => t.trim()).filter(Boolean);
+  // Seul le backend sait lire une image : on garde l'aperçu de l'icône actuelle.
+  ed.icon = { value: field("icon").value, preview: raw.icon ? app.icon : "" };
+  $("#ed-entry-field").hidden = !app.folder;
+  $("#ed-categories").innerHTML = [...new Set(state.apps.map((a) => a.category).filter(Boolean))]
+    .map((c) => `<option value="${esc(c)}">`).join("");
+  $("#ed-file").innerHTML = `Enregistré dans <code>${esc(app.metaFile)}</code>${Object.keys(raw).length ? "" : " (sera créé)"}`;
+  renderTags();
+  editorChanged();
+  closeDrawer();
+  editor.classList.add("open");
+  editor.setAttribute("aria-hidden", "false");
+  setTimeout(() => field("name").focus(), 50);
+}
+
+function closeEditor() {
+  editor.classList.remove("open");
+  editor.setAttribute("aria-hidden", "true");
+}
+
+function renderTags() {
+  const box = $("#ed-tags");
+  box.querySelectorAll(".tag-chip").forEach((c) => c.remove());
+  box.insertAdjacentHTML("afterbegin", ed.tags.map((t, i) =>
+    `<span class="tag-chip">#${esc(t)}<button type="button" data-untag="${i}" title="Retirer">✕</button></span>`).join(""));
+  const detected = ed.app.detected.tags;
+  $("#ed-tag-new").placeholder = ed.tags.length ? "" : detected.length ? detected.map((t) => "#" + t).join(" ") : "Entrée pour ajouter un tag";
+}
+
+function addTag() {
+  const input = $("#ed-tag-new");
+  for (const t of input.value.split(",").map((t) => t.trim().replace(/^#/, "")).filter(Boolean)) {
+    if (!ed.tags.some((x) => x.toLowerCase() === t.toLowerCase())) ed.tags.push(t);
+  }
+  input.value = "";
+  renderTags();
+  editorChanged();
+}
+
+// Icône de l'aperçu : image déjà lue par le backend, emoji tapé, ou icône détectée.
+function previewIcon() {
+  const v = field("icon").value.trim();
+  if (!v) return ed.app.detected.icon;
+  if (v === ed.icon.value && ed.icon.preview) return ed.icon.preview;
+  if (!/\.[a-z0-9]+$/i.test(v) && [...v].length <= 4) return v;
+  return ed.app.detected.icon;
+}
+
+function editorChanged() {
+  const app = ed.app;
+  const d = app.detected;
+  const v = (name) => field(name).value.trim();
+  const preview = {
+    ...app,
+    name: v("name") || d.name,
+    description: v("description") || d.description,
+    version: v("version") || d.version,
+    category: v("category") || d.category,
+    tags: ed.tags.length ? ed.tags : d.tags,
+    color: v("color") || d.color,
+    icon: previewIcon(),
+    hidden: field("hidden").checked,
+  };
+  $("#ed-preview").innerHTML = cardHtml(preview, 0);
+  $("#ed-color-pick").value = /^#[0-9a-f]{6}$/i.test(preview.color) ? preview.color : "#888888";
+  // Une version écrite dans le .portal.json masque celle du HTML ou de l'exe, même mise à jour ensuite.
+  const warn = $("#ed-version-warn");
+  warn.hidden = !(v("version") && d.version);
+  warn.textContent = `⚠ La version déclarée par ${app.kind === "exe" ? "l'exe" : "le HTML"} (${d.version}) ne sera plus suivie, même mise à jour. Laissez vide pour la suivre.`;
+}
+
+editorForm.addEventListener("input", (e) => {
+  if (e.target.id === "ed-color-pick") field("color").value = e.target.value;
+  if (e.target.id !== "ed-tag-new") editorChanged();
+});
+$("#ed-tag-new").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(); }
+  if (e.key === "Backspace" && !e.target.value && ed.tags.length) { ed.tags.pop(); renderTags(); editorChanged(); }
+});
+$("#ed-tag-new").addEventListener("blur", () => { if ($("#ed-tag-new").value.trim()) addTag(); });
+$("#ed-tags").addEventListener("click", (e) => {
+  const i = e.target.closest("[data-untag]")?.dataset.untag;
+  if (i !== undefined) { ed.tags.splice(Number(i), 1); renderTags(); editorChanged(); }
+  $("#ed-tag-new").focus();
+});
+$("#ed-color-auto").addEventListener("click", () => { field("color").value = ""; editorChanged(); });
+$("#ed-icon-pick").addEventListener("click", async () => {
+  try {
+    const picked = await api.pickIcon(ed.app);
+    if (!picked) return;
+    ed.icon = picked;
+    field("icon").value = picked.value;
+    editorChanged();
+  } catch (e) {
+    toast(String(e), true);
+  }
+});
+
+editor.addEventListener("click", (e) => {
+  if (e.target === e.currentTarget || e.target.closest("[data-close]")) closeEditor();
+});
+
+editorForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if ($("#ed-tag-new").value.trim()) addTag();
+  const fields = Object.fromEntries(TEXT_FIELDS.map((name) => [name, field(name).value.trim()]));
+  if (!ed.app.folder) delete fields.entry;
+  fields.tags = ed.tags;
+  fields.hidden = field("hidden").checked;
+  try {
+    await api.saveMeta(ed.app, fields);
+  } catch (err) {
+    return toast(String(err), true);
+  }
+  const hiddenNow = fields.hidden && !ed.app.hidden;
+  closeEditor();
+  state.signature = "";
+  await load();
+  toast(hiddenNow ? "Appli masquée : filtre « 👁 Masquées » pour la retrouver" : "Fiche enregistrée ✔");
+});
 
 // ------------------------------------------------------------------ version et nouveautés
 const changelog = $("#changelog");
@@ -825,6 +977,11 @@ document.addEventListener("keydown", (e) => {
     $("#btn-refresh").click();
     return;
   }
+  if (isOpen(editor)) {
+    if (e.key === "Escape") closeEditor();
+    if (e.ctrlKey && e.key.toLowerCase() === "s") { e.preventDefault(); editorForm.requestSubmit(); }
+    return;
+  }
   if (e.key === "Escape") {
     if (isOpen(changelog)) return closeChangelog();
     if (isOpen(manual)) return closeManual();
@@ -857,6 +1014,7 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "Enter") return launch(app, card);
     if (e.key.toLowerCase() === "f") return toggleFav(app);
     if (e.key.toLowerCase() === "i") return openDrawer(app);
+    if (e.key.toLowerCase() === "e") { e.preventDefault(); return openEditor(app); }
   }
   // Taper n'importe où lance la recherche.
   if (!inField && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -874,10 +1032,16 @@ function mockApi() {
     favorites: ["kanban.html"],
     stats: { "kanban.html": { count: 42, last: now - 3e5 }, "csv-lab.exe": { count: 17, last: now - day }, "json-garage/index.html": { count: 5, last: now - 9 * day } },
   };
-  const a = (id, kind, name, extra = {}) => ({
-    id, kind, name, path: "C:\\Apps\\" + id.replace(/\//g, "\\"), description: "", version: "", author: "", category: "", tags: [], color: "", icon: "", notes: "",
-    size: 180000, modified: now - Math.random() * 30 * day, sources: [], ...extra,
-  });
+  const a = (id, kind, name, extra = {}) => {
+    const app = {
+      id, kind, name, path: "C:\\Apps\\" + id.replace(/\//g, "\\"), description: "", version: "", author: "", category: "", tags: [], color: "", icon: "", notes: "",
+      size: 180000, modified: now - Math.random() * 30 * day, sources: [], hidden: false, folder: id.includes("/"), sidecar: {}, ...extra,
+    };
+    app.metaFile = app.folder ? app.path.replace(/[^\\]+$/, "portal.json") : app.path.replace(/\.\w+$/, ".portal.json");
+    app.detected = { name: app.name, description: app.description, version: app.version, author: app.author, category: app.category,
+      tags: app.tags, color: app.color, icon: app.icon, sources: app.sources };
+    return app;
+  };
   const apps = [
     a("kanban.html", "html", "Kanban Turbo", { description: "Tableau de tâches ultra-rapide, tout tient dans un seul fichier.", version: "2.4.1", category: "Productivité", tags: ["tâches", "perso"], icon: "🏁", sources: ["html"] }),
     a("csv-lab.exe", "exe", "CSV Lab", { description: "Nettoie, fusionne et convertit des CSV à la volée.", version: "1.0.3", author: "Moi", category: "Data", tags: ["csv", "excel"], color: "#00f0ff", sources: ["exe", "sidecar"] }),
@@ -909,6 +1073,15 @@ function mockApi() {
     reveal: async () => {},
     openAppsDir: async () => {},
     pickFolder: async () => null,
+    pickIcon: async () => null,
+    saveMeta: async (target, fields) => {
+      const app = apps.find((x) => x.id === target.id);
+      app.sidecar = Object.fromEntries(Object.entries(fields).filter(([, v]) => v && v.length !== 0));
+      for (const k of ["name", "description", "version", "author", "category", "tags", "color", "icon", "notes"]) {
+        app[k] = app.sidecar[k] ?? app.detected[k] ?? "";
+      }
+      app.hidden = !!app.sidecar.hidden;
+    },
     about: async () => ({ version: "0.0.0-dev", changelog: "## [0.0.0-dev] - 2026-01-01\n\n### Ajouté\n- Aperçu navigateur : le vrai changelog n'est lu que dans l'appli." }),
   };
 }

@@ -293,6 +293,42 @@ dl.facts dd { margin: 0; overflow-wrap: anywhere; }
 .toggle { display: flex; gap: 10px; align-items: center; cursor: pointer; }
 .hint .btn { margin-left: 8px; padding: 6px 12px; }
 
+/* ------------------------------------------------------------------ éditeur de fiche */
+.editor-card { width: min(760px, 100%); user-select: text; }
+.editor-card #ed-file { margin: 0 0 16px; overflow-wrap: anywhere; }
+.editor-preview { pointer-events: none; max-width: 340px; margin: 0 auto 20px; }
+.editor-preview .card { animation: none; }
+.editor-preview .card-btns { display: none; }
+.ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.ed-grid .wide { grid-column: 1 / -1; }
+.ed-field { display: grid; gap: 6px; min-width: 0; }
+.ed-field > span { font-size: 11px; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); }
+.modal textarea, .tag-input {
+  padding: 9px 12px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
+  outline: none; font: inherit; color: inherit; resize: vertical; user-select: text;
+}
+.modal textarea:focus, .tag-input:focus-within { border-color: var(--accent); }
+.modal input[type=text]::placeholder, .modal textarea::placeholder { color: var(--muted); opacity: .6; font-style: italic; }
+.modal input[type=color] {
+  width: 44px; height: 40px; padding: 3px; flex: none; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
+}
+.tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 40px; padding: 5px 8px; cursor: text; }
+.tag-input input { flex: 1; min-width: 120px; border: 0 !important; background: none !important; height: 28px !important; padding: 0 4px !important; }
+.tag-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--chip); font-size: 12px; }
+.tag-chip button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 4px; font-size: 13px; }
+.tag-chip button:hover { color: var(--text); }
+.ed-warn { margin: -4px 0 0; padding: 8px 12px; font-size: 12px; border-left: 3px solid #ffb020; background: var(--chip); border-radius: 0 var(--radius) var(--radius) 0; }
+.ed-warn[hidden], .ed-field[hidden] { display: none; }
+.editor-actions {
+  position: sticky; bottom: -28px; display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+  margin: 24px -32px -28px; padding: 14px 32px; background: var(--bg-2); border-top: 1px solid var(--panel-border);
+}
+.editor-actions .hint { margin: 0 auto 0 0; }
+.card.is-hidden { opacity: .45; filter: grayscale(.8); }
+.card.is-hidden:hover, .card.is-hidden:focus { opacity: .8; }
+@media (max-width: 640px) { .ed-grid { grid-template-columns: 1fr; } }
+
 /* ------------------------------------------------------------------ mode d'emploi */
 .manual-card { width: min(820px, 100%); user-select: text; scroll-behavior: smooth; }
 .manual-toc {

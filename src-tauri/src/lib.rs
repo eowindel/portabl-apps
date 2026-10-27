@@ -3,13 +3,14 @@ mod settings;
 
 use scan::AppEntry;
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value};
 use settings::{Settings, Stat};
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::State;
+use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
@@ -156,6 +157,118 @@ fn open_apps_dir(state: State<AppState>) -> Result<(), String> {
     Command::new("explorer.exe").arg(dir).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
+/// Champs qu'on accepte d'écrire dans un .portal.json depuis l'éditeur.
+const META_FIELDS: [&str; 11] =
+    ["name", "description", "version", "author", "category", "tags", "color", "icon", "notes", "hidden", "entry"];
+
+/// Enregistre les champs modifiés dans le .portal.json de l'appli.
+/// Un champ vide est retiré du fichier ; les champs inconnus déjà présents sont conservés ;
+/// un fichier qui ne contient plus rien est supprimé.
+#[tauri::command]
+fn save_meta(path: String, fields: Map<String, Value>, state: State<AppState>) -> Result<(), String> {
+    let s = state.0.lock().unwrap();
+    let app = checked_path(&s, &path)?;
+    let root = s.apps_dir().canonicalize().map_err(|e| e.to_string())?;
+    let file = scan::sidecar_path(&root, &app);
+    let in_folder = file.file_name().is_some_and(|n| n == "portal.json");
+
+    let mut obj = match scan::read_json_object(&file)? {
+        Some(Value::Object(o)) => o,
+        _ => Map::new(),
+    };
+    for (key, value) in fields {
+        if !META_FIELDS.contains(&key.as_str()) {
+            continue;
+        }
+        let value = match value {
+            Value::String(v) => Value::String(v.trim().to_string()),
+            Value::Array(tags) => Value::Array(
+                tags.into_iter()
+                    .filter_map(|t| t.as_str().map(|t| t.trim().to_string()))
+                    .filter(|t| !t.is_empty())
+                    .map(Value::String)
+                    .collect(),
+            ),
+            v => v,
+        };
+        let empty = match &value {
+            Value::Null | Value::Bool(false) => true,
+            Value::String(v) => v.is_empty(),
+            Value::Array(v) => v.is_empty(),
+            _ => false,
+        };
+        if empty {
+            obj.shift_remove(&key);
+            continue;
+        }
+        if key == "entry" {
+            let entry = value.as_str().unwrap_or_default();
+            let target = file.parent().unwrap_or(&root).join(entry);
+            let inside = Path::new(entry).components().all(|c| matches!(c, std::path::Component::Normal(_)));
+            let launchable = Path::new(entry).extension().is_some_and(|e| {
+                ["html", "htm", "exe"].iter().any(|x| e.eq_ignore_ascii_case(x))
+            });
+            if !in_folder {
+                return Err("« entry » ne sert que pour une appli rangée dans un sous-dossier".into());
+            }
+            if !inside || !launchable || !target.is_file() {
+                return Err(format!("Fichier de lancement introuvable dans le dossier : {entry}"));
+            }
+        }
+        obj.insert(key, value);
+    }
+
+    if obj.is_empty() {
+        if file.exists() {
+            std::fs::remove_file(&file).map_err(|e| format!("Suppression impossible : {e}"))?;
+        }
+        return Ok(());
+    }
+    let json = serde_json::to_string_pretty(&Value::Object(obj)).map_err(|e| e.to_string())?;
+    std::fs::write(&file, json + "\n").map_err(|e| format!("Écriture impossible ({}) : {e}", plain(&file).display()))
+}
+
+#[derive(Serialize)]
+struct IconPick {
+    /// Valeur à mettre dans `icon` (chemin relatif à l'appli).
+    value: String,
+    /// Aperçu affichable (`data:`).
+    preview: String,
+}
+
+/// Choix d'une image pour l'icône. Une image prise ailleurs est copiée à côté de l'appli,
+/// pour que l'appli et son icône voyagent ensemble.
+#[tauri::command]
+async fn pick_icon(app: tauri::AppHandle, path: String) -> Result<Option<IconPick>, String> {
+    let target = checked_path(&app.state::<AppState>().0.lock().unwrap(), &path)?;
+    let base = target.parent().ok_or("Dossier introuvable")?.to_path_buf();
+    let Some(picked) = app
+        .dialog()
+        .file()
+        .set_title("Icône de l'appli")
+        .set_directory(plain(&base))
+        .add_filter("Images", &["png", "svg", "ico", "jpg", "jpeg", "gif", "webp"])
+        .blocking_pick_file()
+        .and_then(|f| f.into_path().ok())
+    else {
+        return Ok(None);
+    };
+    let picked = picked.canonicalize().map_err(|e| e.to_string())?;
+    let rel = match picked.strip_prefix(&base) {
+        Ok(rel) => rel.to_path_buf(),
+        Err(_) => {
+            let name = picked.file_name().ok_or("Fichier invalide")?.to_string_lossy().into_owned();
+            let stem = target.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = if base.join(&name).exists() { format!("{stem}-{name}") } else { name };
+            std::fs::copy(&picked, base.join(&name)).map_err(|e| format!("Copie de l'image impossible : {e}"))?;
+            PathBuf::from(name)
+        }
+    };
+    let value = rel.to_string_lossy().replace('\\', "/");
+    let preview = scan::resolve_icon(&base, &value).ok_or("Image illisible")?;
+    Ok(Some(IconPick { value, preview }))
+}
+
 #[derive(Serialize)]
 struct About {
     version: &'static str,
@@ -194,6 +307,8 @@ pub fn run() {
             reveal,
             open_apps_dir,
             pick_folder,
+            save_meta,
+            pick_icon,
             about
         ])
         .run(tauri::generate_context!())

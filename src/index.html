@@ -109,6 +109,55 @@
     </div>
   </div>
 
+  <!-- Éditeur de fiche (.portal.json) -->
+  <div class="modal" id="editor" aria-hidden="true">
+    <form class="modal-card editor-card" id="editor-form" autocomplete="off">
+      <button type="button" class="icon-btn drawer-close" data-close title="Fermer (Échap)">✕</button>
+      <h2>Modifier la fiche</h2>
+      <p class="hint" id="ed-file"></p>
+      <div class="editor-preview" id="ed-preview"></div>
+
+      <div class="ed-grid">
+        <label class="ed-field wide"><span>Nom</span><input type="text" name="name" spellcheck="false"></label>
+        <label class="ed-field wide"><span>Description</span><textarea name="description" rows="2"></textarea></label>
+        <label class="ed-field"><span>Version</span><input type="text" name="version" spellcheck="false"></label>
+        <label class="ed-field"><span>Auteur</span><input type="text" name="author" spellcheck="false"></label>
+        <p class="ed-warn wide" id="ed-version-warn" hidden></p>
+        <label class="ed-field"><span>Catégorie</span><input type="text" name="category" list="ed-categories" spellcheck="false"></label>
+        <datalist id="ed-categories"></datalist>
+        <div class="ed-field">
+          <span>Couleur</span>
+          <div class="row">
+            <input type="color" id="ed-color-pick" title="Choisir une couleur">
+            <input type="text" name="color" spellcheck="false" placeholder="auto">
+            <button type="button" class="btn" id="ed-color-auto" title="Couleur automatique">Auto</button>
+          </div>
+        </div>
+        <div class="ed-field wide">
+          <span>Tags</span>
+          <div class="tag-input" id="ed-tags"><input type="text" id="ed-tag-new" spellcheck="false"></div>
+        </div>
+        <div class="ed-field wide">
+          <span>Icône</span>
+          <div class="row">
+            <input type="text" name="icon" spellcheck="false">
+            <button type="button" class="btn" id="ed-icon-pick">🖼 Image…</button>
+          </div>
+          <small class="hint">Un emoji (🔧, 🏍️…) ou une image. Une image choisie ailleurs est copiée à côté de l'appli.</small>
+        </div>
+        <label class="ed-field wide" id="ed-entry-field"><span>Fichier lancé (entry)</span><input type="text" name="entry" spellcheck="false"></label>
+        <label class="ed-field wide"><span>Notes</span><textarea name="notes" rows="3"></textarea></label>
+        <label class="toggle wide"><input type="checkbox" name="hidden"> Masquer cette appli <small class="hint">— elle reste accessible via le filtre « Masquées »</small></label>
+      </div>
+
+      <div class="editor-actions">
+        <span class="hint">Champ vide = valeur détectée (en grisé). <kbd>Ctrl S</kbd> pour enregistrer.</span>
+        <button type="button" class="btn" data-close>Annuler</button>
+        <button type="submit" class="btn primary">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+
   <!-- Nouveautés (CHANGELOG.md embarqué dans l'exe) -->
   <div class="modal" id="changelog" aria-hidden="true">
     <div class="modal-card manual-card">
@@ -180,6 +229,16 @@
       <section id="m-meta">
         <h3>Décrire ses applis</h3>
         <p>Nom, description, version, catégorie, tags, couleur, icône, notes… Tout est facultatif. Les infos sont lues dans cet ordre de priorité :</p>
+        <h4>Le plus simple : l'éditeur ✏️</h4>
+        <p>Ouvrez la fiche d'une appli (<b>ⓘ</b> ou clic droit) puis <b>✏️ Modifier</b>, ou appuyez sur <kbd>E</kbd> sur une carte. Le formulaire écrit le <code>.portal.json</code> pour vous, au bon endroit, avec un aperçu de la carte en direct.</p>
+        <ul>
+          <li>Les champs vides affichent <i>en grisé</i> ce qui a été détecté (titre du HTML, infos de l'exe…). Laissez-les vides pour garder la détection : seul ce que vous remplissez est enregistré.</li>
+          <li>Tags : <kbd>Entrée</kbd> ou virgule pour ajouter, ✕ ou <kbd>Retour arrière</kbd> pour retirer.</li>
+          <li>Icône : un emoji, ou <b>🖼 Image…</b>. Une image prise hors du dossier de l'appli y est copiée.</li>
+          <li><b>Version</b> : pour une appli qui déclare déjà sa version, mieux vaut laisser vide, sinon la version écrite ici restera figée.</li>
+          <li><b>Masquer</b> : l'appli disparaît de la liste. Pour la retrouver, filtre <b>👁 Masquées</b>, puis décochez la case.</li>
+          <li>Tout vider supprime le fichier. Les champs que vous auriez ajoutés à la main sont conservés. <kbd>Ctrl S</kbd> enregistre.</li>
+        </ul>
         <h4>1. Un fichier <code>.portal.json</code></h4>
         <p>À côté d'un fichier seul : même nom + <code>.portal.json</code> (<code>Kanban.html</code> → <code>Kanban.portal.json</code>). Dans un sous-dossier : <code>portal.json</code>.</p>
 <pre>{
@@ -232,6 +291,7 @@
           <tr><td><kbd>Entrée</kbd></td><td>sur une carte : lancer</td></tr>
           <tr><td><kbd>F</kbd></td><td>favori</td></tr>
           <tr><td><kbd>I</kbd></td><td>fiche détaillée</td></tr>
+          <tr><td><kbd>E</kbd></td><td>modifier la fiche</td></tr>
           <tr><td><kbd>F5</kbd></td><td>rescanner le dossier</td></tr>
           <tr><td><kbd>F1</kbd></td><td>ce mode d'emploi</td></tr>
           <tr><td><kbd>Échap</kbd></td><td>fermer / effacer la recherche</td></tr>
@@ -264,7 +324,7 @@
         <h3>Dépannage</h3>
         <dl class="faq">
           <dt>Mon appli n'apparaît pas</dt>
-          <dd>Vérifiez qu'elle est au premier niveau de <code>apps\</code> (ou dans un sous-dossier qui respecte les règles), que son extension est <code>.html</code>, <code>.htm</code> ou <code>.exe</code>, et qu'elle n'a pas <code>"hidden": true</code>. Puis <kbd>F5</kbd>.</dd>
+          <dd>Vérifiez qu'elle est au premier niveau de <code>apps\</code> (ou dans un sous-dossier qui respecte les règles), que son extension est <code>.html</code>, <code>.htm</code> ou <code>.exe</code>, et qu'elle n'est pas masquée (filtre <b>👁 Masquées</b>). Puis <kbd>F5</kbd>.</dd>
           <dt>Les infos de mon <code>.portal.json</code> sont ignorées</dt>
           <dd>Le nom doit correspondre exactement (<code>Kanban.portal.json</code> pour <code>Kanban.html</code>) et le JSON doit être valide : guillemets doubles, pas de virgule après le dernier champ.</dd>
           <dt>Une appli HTML s'ouvre dans un onglet au lieu d'une fenêtre</dt>

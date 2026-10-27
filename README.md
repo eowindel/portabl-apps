@@ -18,7 +18,7 @@ PortablApps\
 
 Le dossier est rescanné à chaque retour sur la fenêtre (ou F5). Le dossier scanné se change dans les réglages ⚙.
 
-**Raccourcis** : taper = rechercher · `Ctrl K` · flèches pour naviguer · `Entrée` lancer · `F` favori · `I` / clic droit détails · `Échap`.
+**Raccourcis** : taper = rechercher · `Ctrl K` · flèches pour naviguer · `Entrée` lancer · `F` favori · `I` / clic droit détails · `E` modifier la fiche · `Échap`.
 
 **Applis HTML** : par défaut, chacune s'ouvre dans sa propre fenêtre Edge en mode appli (sans onglets), pour en lancer plusieurs tout en gardant le lanceur à portée. Alternatives dans les réglages : navigateur par défaut, ou navigateur perso avec arguments (`{url}`).
 
@@ -26,7 +26,7 @@ Le dossier est rescanné à chaque retour sur la fenêtre (ou F5). Le dossier sc
 
 Par ordre de priorité :
 
-1. **`MonAppli.portal.json`** à côté du fichier (ou `portal.json` dans le dossier de l'appli) :
+1. **`MonAppli.portal.json`** à côté du fichier (ou `portal.json` dans le dossier de l'appli), à écrire à la main ou avec l'éditeur ✏️ de l'appli (touche `E`) :
    ```json
    {
      "name": "Mon Appli", "description": "…", "version": "1.2.0", "author": "Moi",

@@ -33,6 +33,29 @@ pub struct AppEntry {
     pub modified: u64,
     /// D'où viennent les infos ("sidecar", "html", "exe").
     pub sources: Vec<String>,
+    /// `"hidden": true` dans le .portal.json : l'interface ne l'affiche qu'à la demande.
+    pub hidden: bool,
+    /// Appli rangée dans un sous-dossier (champ `entry` possible).
+    pub folder: bool,
+    /// Fichier .portal.json de l'appli, qu'il existe déjà ou non.
+    pub meta_file: String,
+    /// Contenu brut du .portal.json (objet vide s'il n'existe pas), pour l'éditeur.
+    pub sidecar: serde_json::Value,
+    /// Infos trouvées sans le .portal.json : ce que l'éditeur propose en grisé.
+    pub detected: Detected,
+}
+
+#[derive(Serialize, Clone, Default)]
+pub struct Detected {
+    pub name: String,
+    pub description: String,
+    pub version: String,
+    pub author: String,
+    pub category: String,
+    pub tags: Vec<String>,
+    pub color: String,
+    pub icon: String,
+    pub sources: Vec<String>,
 }
 
 /// Contenu possible d'un fichier `.portal.json` — tous les champs sont optionnels.
@@ -62,8 +85,8 @@ pub fn scan(dir: &Path) -> Vec<AppEntry> {
                 apps.push(app);
             }
         } else if let Some(kind) = kind_of(&path) {
-            let sidecar = path.with_file_name(format!("{}.portal.json", stem(&path)));
-            if let Some(app) = build(dir, &path, kind, read_sidecar(&sidecar)) {
+            let meta_file = sidecar_path(dir, &path);
+            if let Some(app) = build(dir, &path, kind, &meta_file, None) {
                 apps.push(app);
             }
         }
@@ -75,8 +98,9 @@ pub fn scan(dir: &Path) -> Vec<AppEntry> {
 /// Un sous-dossier est une appli s'il contient un `portal.json` avec `entry`,
 /// un `index.html`, ou un unique `.exe`.
 fn folder_app(root: &Path, folder: &Path) -> Option<AppEntry> {
-    let sidecar = read_sidecar(&folder.join("portal.json"));
-    let target = match sidecar.as_ref().and_then(|s| s.entry.clone()) {
+    let meta_file = folder.join("portal.json");
+    let entry = read_sidecar(&meta_file).and_then(|(s, _)| s.entry);
+    let target = match entry {
         Some(entry) => folder.join(entry),
         None if folder.join("index.html").is_file() => folder.join("index.html"),
         None => {
@@ -93,18 +117,21 @@ fn folder_app(root: &Path, folder: &Path) -> Option<AppEntry> {
         }
     };
     let kind = kind_of(&target)?;
-    let mut app = build(root, &target, kind, sidecar)?;
-    // Pour un dossier, le nom du dossier est un meilleur repli que « index ».
-    if app.sources.is_empty() || app.name.eq_ignore_ascii_case("index") {
-        app.name = file_name(folder);
-    }
-    Some(app)
+    build(root, &target, kind, &meta_file, Some(file_name(folder)))
 }
 
-fn build(root: &Path, path: &Path, kind: &'static str, sidecar: Option<Sidecar>) -> Option<AppEntry> {
-    if sidecar.as_ref().and_then(|s| s.hidden).unwrap_or(false) {
-        return None;
+/// Emplacement du .portal.json d'une appli : `portal.json` dans son sous-dossier,
+/// ou `<nom>.portal.json` à côté d'un fichier posé à la racine.
+pub fn sidecar_path(root: &Path, app: &Path) -> PathBuf {
+    let rel = app.strip_prefix(root).unwrap_or(app);
+    match rel.components().next() {
+        Some(first) if rel.components().count() > 1 => root.join(first).join("portal.json"),
+        _ => app.with_file_name(format!("{}.portal.json", stem(app))),
     }
+}
+
+fn build(root: &Path, path: &Path, kind: &'static str, meta_file: &Path, folder_name: Option<String>) -> Option<AppEntry> {
+    let sidecar = read_sidecar(meta_file);
     let meta = std::fs::metadata(path).ok()?;
     let mut app = AppEntry {
         id: path
@@ -130,7 +157,29 @@ fn build(root: &Path, path: &Path, kind: &'static str, sidecar: Option<Sidecar>)
         "html" => read_html_meta(path, &mut app),
         _ => read_exe_meta(path, &mut app),
     }
-    if let Some(s) = sidecar {
+    // Pour un dossier, le nom du dossier est un meilleur repli que « index ».
+    if let Some(name) = &folder_name {
+        if app.sources.is_empty() || app.name.eq_ignore_ascii_case("index") {
+            app.name = name.clone();
+        }
+    }
+    app.folder = folder_name.is_some();
+    app.meta_file = meta_file.to_string_lossy().into_owned();
+    app.detected = Detected {
+        name: app.name.clone(),
+        description: app.description.clone(),
+        version: app.version.clone(),
+        author: app.author.clone(),
+        category: app.category.clone(),
+        tags: app.tags.clone(),
+        color: app.color.clone(),
+        icon: app.icon.clone(),
+        sources: app.sources.clone(),
+    };
+    app.sidecar = serde_json::Value::Object(Default::default());
+    if let Some((s, raw)) = sidecar {
+        app.hidden = s.hidden.unwrap_or(false);
+        app.sidecar = raw;
         apply_sidecar(path, s, &mut app);
     }
     Some(app)
@@ -330,14 +379,28 @@ fn file_name(path: &Path) -> String {
     path.file_name().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default()
 }
 
-fn read_sidecar(path: &Path) -> Option<Sidecar> {
-    let text = std::fs::read_to_string(path).ok()?;
-    serde_json::from_str(text.trim_start_matches('\u{feff}')).ok()
+/// Lit un .portal.json : les champs connus, plus l'objet brut pour l'éditeur.
+fn read_sidecar(path: &Path) -> Option<(Sidecar, serde_json::Value)> {
+    let raw = read_json_object(path).ok()??;
+    Some((serde_json::from_value(raw.clone()).ok()?, raw))
+}
+
+/// `Ok(None)` si le fichier n'existe pas, `Err` s'il existe mais n'est pas un objet JSON valide.
+pub fn read_json_object(path: &Path) -> Result<Option<serde_json::Value>, String> {
+    let text = match std::fs::read_to_string(path) {
+        Ok(t) => t,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(e.to_string()),
+    };
+    match serde_json::from_str::<serde_json::Value>(text.trim_start_matches('\u{feff}')) {
+        Ok(v) if v.is_object() => Ok(Some(v)),
+        _ => Err(format!("{} n'est pas un JSON valide", file_name(path))),
+    }
 }
 
 /// Transforme une valeur d'icône en quelque chose d'affichable :
 /// URL `data:` telle quelle, fichier image local → `data:`, sinon emoji / texte court.
-fn resolve_icon(base: &Path, value: &str) -> Option<String> {
+pub fn resolve_icon(base: &Path, value: &str) -> Option<String> {
     let value = value.trim();
     if value.is_empty() {
         return None;
@@ -374,5 +437,28 @@ mod tests {
         assert!(app.sources.contains(&"exe".to_string()));
         assert!(!app.version.is_empty());
         assert!(app.icon.starts_with("data:image/"));
+    }
+
+    #[test]
+    fn sidecar_next_to_file_or_in_folder() {
+        let root = Path::new(r"C:\apps");
+        assert_eq!(sidecar_path(root, &root.join("Kanban.html")), root.join("Kanban.portal.json"));
+        assert_eq!(sidecar_path(root, &root.join(r"Suite\bin\Lanceur.exe")), root.join(r"Suite\portal.json"));
+    }
+
+    #[test]
+    fn hidden_apps_are_listed_with_detected_values() {
+        let root = std::env::temp_dir().join(format!("portabl-test-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("a.html"), "<title>Détectée</title><meta name=\"version\" content=\"2.0\">").unwrap();
+        std::fs::write(root.join("a.portal.json"), r#"{"name":"Perso","hidden":true,"extra":1}"#).unwrap();
+        let apps = scan(&root);
+        std::fs::remove_dir_all(&root).unwrap();
+        let app = &apps[0];
+        assert!(app.hidden);
+        assert_eq!(app.name, "Perso");
+        assert_eq!(app.detected.name, "Détectée");
+        assert_eq!(app.detected.version, "2.0");
+        assert_eq!(app.sidecar["extra"], 1);
     }
 }
