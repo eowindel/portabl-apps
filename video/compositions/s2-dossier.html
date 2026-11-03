@@ -1,0 +1,75 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:#c9ced6; overflow:hidden; }
+  
+  .tile { position:absolute; width:500px; height:124px; background:#f4f6f9; border-radius:14px; box-shadow:0 8px 0 rgba(27,29,36,.18);
+          display:flex; align-items:center; gap:18px; padding:0 22px; font:600 30px "Chakra Petch",sans-serif; color:#1b1d24; white-space:nowrap; }
+  .tile .ic { flex:none; width:100px; height:84px; border-radius:12px; display:flex; align-items:center; justify-content:center; font:600 28px "Chakra Petch",sans-serif; color:#1b1d24; letter-spacing:.04em; }
+  .tile.html .ic { background:#ff8a3d; } .tile.exe .ic { background:#5ea0ff; } .tile.url .ic { background:#2ecf8a; }
+  .tile.hit { box-shadow:0 0 0 6px #ff2bd6, 0 8px 0 rgba(27,29,36,.18); }
+
+  .tile { z-index:2; }
+  
+  #s2-folder { position:absolute; left:290px; top:300px; width:620px; height:520px; }
+  #s2-folder .back { position:absolute; left:0; top:40px; width:620px; height:480px; background:#e0a92a; border-radius:30px 30px 22px 22px; }
+  #s2-folder .tab { position:absolute; left:0; top:0; width:250px; height:90px; background:#e0a92a; border-radius:26px 26px 0 0; }
+  #s2-folder .front { position:absolute; left:0; top:130px; width:620px; height:390px; background:#ffd23f; border-radius:22px 22px 26px 26px; box-shadow:inset 0 8px 0 #ffe27a; }
+  #s2-folder .lbl { position:absolute; left:0; right:0; top:262px; text-align:center; font:italic 900 96px Orbitron,sans-serif; color:#1b1d24; letter-spacing:.04em; }
+  #s2-title { position:absolute; left:1010px; top:420px; font:italic 900 112px/1.04 Orbitron,sans-serif; color:#1b1d24; letter-spacing:.06em; clip-path:inset(-10px 100% -10px 0); }
+  #s2-iris { position:absolute; inset:0; background:#0b0614; clip-path:circle(0px at 600px 560px); }
+  .gauge { position:absolute; left:960px; top:540px; width:800px; height:800px; }
+
+  #s2-folder { z-index:3; }
+  #s2-iris { z-index:20; }
+  .gauge { z-index:21; }
+  </style>
+  <div data-hf-id="hf-z3iq" id="root" data-composition-id="s2-dossier" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-sv2t" id="s2-t1" class="tile html" style="left:10px;top:250px"><span data-hf-id="hf-l12k" class="ic">HTML</span><span data-hf-id="hf-r9d2" class="nm">kanban (1).html</span></div>
+    <div data-hf-id="hf-d0eh" id="s2-t2" class="tile exe" style="left:480px;top:235px"><span data-hf-id="hf-f9df" class="ic">EXE</span><span data-hf-id="hf-y7rf" class="nm">setup_final_v2.exe</span></div>
+    <div data-hf-id="hf-h4cx" id="s2-t3" class="tile html" style="left:950px;top:255px"><span data-hf-id="hf-8hfo" class="ic">HTML</span><span data-hf-id="hf-5a5r" class="nm">kanban-final.html</span></div>
+    <div data-hf-id="hf-buzh" id="s2-t4" class="tile url" style="left:1420px;top:240px"><span data-hf-id="hf-eyiy" class="ic">URL</span><span data-hf-id="hf-5v1u" class="nm">intranet.url</span></div>
+    <div data-hf-id="hf-1oke" id="s2-t5" class="tile exe" style="left:25px;top:490px"><span data-hf-id="hf-sqs3" class="ic">EXE</span><span data-hf-id="hf-ipe4" class="nm">convertisseur (3).exe</span></div>
+    <div data-hf-id="hf-tbgb" id="s2-t6" class="tile html" style="left:495px;top:470px"><span data-hf-id="hf-7ail" class="ic">HTML</span><span data-hf-id="hf-f74v" class="nm">regex-test.html</span></div>
+    <div data-hf-id="hf-0yda" id="s2-t7" class="tile html" style="left:945px;top:500px"><span data-hf-id="hf-7otm" class="ic">HTML</span><span data-hf-id="hf-ad5n" class="nm">kanban_v2 NEW.html</span></div>
+    <div data-hf-id="hf-tnf2" id="s2-t8" class="tile html" style="left:1415px;top:485px"><span data-hf-id="hf-9ocr" class="ic">HTML</span><span data-hf-id="hf-2ebu" class="nm">notes (3).html</span></div>
+    <div data-hf-id="hf-1xvl" id="s2-t9" class="tile exe" style="left:5px;top:730px"><span data-hf-id="hf-sch2" class="ic">EXE</span><span data-hf-id="hf-v6u4" class="nm">snapshot.exe</span></div>
+    <div data-hf-id="hf-x3gz" id="s2-t10" class="tile html" style="left:470px;top:740px"><span data-hf-id="hf-a2ns" class="ic">HTML</span><span data-hf-id="hf-snqo" class="nm">pomodoro.html</span></div>
+    <div data-hf-id="hf-3i8p" id="s2-t11" class="tile html" style="left:940px;top:745px"><span data-hf-id="hf-8vqp" class="ic">HTML</span><span data-hf-id="hf-224x" class="nm">kanban-turbo (1).html</span></div>
+    <div data-hf-id="hf-htyk" id="s2-t12" class="tile exe" style="left:1420px;top:735px"><span data-hf-id="hf-ry61" class="ic">EXE</span><span data-hf-id="hf-w0ba" class="nm">csv-lab.exe</span></div>
+    <div data-hf-id="hf-p6fr" id="s2-folder"><div data-hf-id="hf-q64h" class="back"></div><div data-hf-id="hf-clpx" class="tab"></div><div data-hf-id="hf-wk79" class="front"></div><div data-hf-id="hf-1njj" class="lbl">apps/</div></div>
+    <div data-hf-id="hf-jt59" id="s2-title">Un<br data-hf-id="hf-x5px">dossier.</div>
+    <div data-hf-id="hf-dipm" id="s2-iris"></div>
+    <svg data-hf-id="hf-tpjp" id="s2-gauge" class="gauge" viewBox="0 0 64 64" aria-hidden="true">
+      <path data-hf-id="hf-2ksr" id="s2-arc" d="M12 44 A22 22 0 1 1 52 44" fill="none" stroke="#ff2bd6" stroke-width="6" stroke-linecap="round" pathLength="100"/>
+      <line data-hf-id="hf-19uo" id="s2-needle" x1="32" y1="40" x2="46" y2="26" stroke="#00f0ff" stroke-width="4" stroke-linecap="round"/>
+      <circle data-hf-id="hf-jyg7" cx="32" cy="40" r="5" fill="#f6eaff"/>
+    </svg>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const rots = [-3,2,-2,3,2,-3,3,-2,-2,3,-3,2];
+    const pos = [[10,250],[480,235],[950,255],[1420,240],[25,490],[495,470],[945,500],[1415,485],[5,730],[470,740],[940,745],[1420,735]];
+    rots.forEach((r, i) => tl.set("#s2-t" + (i + 1), { rotation: r }, 0));
+    // le dossier arrive par le bas, les tuiles s'y engouffrent une à une
+    tl.fromTo("#s2-folder", { y: 700 }, { y: 0, duration: 0.5, ease: "power3.out" }, 0.05);
+    const order = [11, 1, 3, 7, 2, 5, 4, 6, 8, 9, 10, 12];
+    order.forEach((n, k) => {
+      const [x, y] = pos[n - 1];
+      // centre de la tuile -> centre de la face avant du dossier (600, 640)
+      tl.fromTo("#s2-t" + n, { x: 0, y: 0, scale: 1, opacity: 1 }, { x: 600 - (x + 250), y: 650 - (y + 62), scale: 0.18, opacity: 0, duration: 0.5, ease: "power3.in" }, 0.6 + k * 0.1);
+    });
+    // le dossier « avale » : petit rebond à chaque tuile
+    tl.fromTo("#s2-folder", { scale: 1, transformOrigin: "50% 100%" }, { scale: 1.035, duration: 0.12, ease: "power2.out", yoyo: true, repeat: 5 }, 1.2);
+    tl.to("#s2-title", { clipPath: "inset(-10px 0% -10px 0)", duration: 0.55, ease: "power3.out" }, 1.6);
+    // iris néon depuis le dossier, le compte-tours se trace
+    tl.fromTo("#s2-iris", { clipPath: "circle(0px at 600px 560px)" }, { clipPath: "circle(1500px at 600px 560px)", duration: 0.7, ease: "power3.in" }, 2.9);
+    tl.fromTo("#s2-gauge", { opacity: 0, xPercent: -50, yPercent: -50 }, { opacity: 1, xPercent: -50, yPercent: -50, duration: 0.01 }, 3.1);
+    tl.fromTo("#s2-arc", { strokeDasharray: 100, strokeDashoffset: 100 }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.out" }, 3.2);
+    tl.fromTo("#s2-needle", { rotation: -110, svgOrigin: "32 40" }, { rotation: 0, svgOrigin: "32 40", duration: 0.55, ease: "elastic.out(1,0.55)" }, 3.65);
+    window.__timelines["s2-dossier"] = tl;
+  </script>
+</template>

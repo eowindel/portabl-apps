@@ -1,0 +1,41 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:linear-gradient(180deg,#0b0614 0%,#1d0a3a 45%,#6a0f6e 62%,#0b0614 62.2%); overflow:hidden; }
+  #s5-sun { position:absolute; left:960px; top:150px; width:640px; height:640px; margin-left:-320px; border-radius:50%;
+    background:linear-gradient(180deg,#ffe45c 0%,#ff8a3d 45%,#ff2bd6 100%);
+    -webkit-mask-image:linear-gradient(180deg,#000 55%,transparent 55%),repeating-linear-gradient(180deg,#000 0 18px,transparent 18px 28px);
+    mask-image:linear-gradient(180deg,#000 55%,transparent 55%),repeating-linear-gradient(180deg,#000 0 18px,transparent 18px 28px); opacity:.55; }
+  #s5-road { position:absolute; left:-40%; right:-40%; top:670px; bottom:0; perspective:420px; overflow:hidden; }
+  #s5-grid { position:absolute; inset:-100% 0 0 0; transform:rotateX(72deg); transform-origin:bottom;
+    background:linear-gradient(90deg,rgba(0,240,255,.6) 2px,transparent 2px) 0 0/120px 120px, linear-gradient(0deg,rgba(255,43,214,.6) 2px,transparent 2px) 0 0/120px 120px;
+    -webkit-mask-image:linear-gradient(0deg,#000 30%,transparent 85%); mask-image:linear-gradient(0deg,#000 30%,transparent 85%); }
+  .line { position:absolute; left:0; right:0; text-align:center; font:italic 900 150px/1 Orbitron,sans-serif; letter-spacing:.06em; white-space:nowrap;
+    background:linear-gradient(180deg,#fff 10%,#00f0ff 48%,#ff2bd6 85%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #s5-l1 { top:210px; clip-path:inset(-20px 100% -20px 0); }
+  #s5-l2 { top:390px; font-size:122px; clip-path:inset(-20px 100% -20px 0); }
+  .kind { position:absolute; top:640px; width:420px; height:110px; line-height:110px; text-align:center; font:700 44px Orbitron,sans-serif; letter-spacing:.12em; color:#0b0614; transform:skewX(-8deg); }
+  #s5-k1 { left:200px; background:#ff8a3d; } #s5-k2 { left:750px; background:#3d8bff; color:#fff; } #s5-k3 { left:1300px; background:#2ecf8a; }
+  .kind span { display:inline-block; transform:skewX(8deg); }
+  </style>
+  <div id="root" data-composition-id="s5-claim" data-width="1920" data-height="1080">
+    <div id="s5-sun"></div>
+    <div id="s5-road"><div id="s5-grid"></div></div>
+    <div id="s5-l1" class="line">UN DOSSIER.</div>
+    <div id="s5-l2" class="line">TOUTES TES APPLIS.</div>
+    <div id="s5-k1" class="kind"><span>HTML</span></div><div id="s5-k2" class="kind"><span>EXE</span></div><div id="s5-k3" class="kind"><span>RACCOURCIS</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // la route défile : fonction du temps de la timeline
+    tl.fromTo("#s5-grid", { backgroundPosition: "0px 0px, 0px 0px" }, { backgroundPosition: "0px 480px, 0px 480px", duration: 4, ease: "none" }, 0);
+    tl.fromTo("#s5-sun", { y: 60, opacity: 0 }, { y: 0, opacity: 0.55, duration: 0.6, ease: "power3.out" }, 0);
+    tl.to("#s5-l1", { clipPath: "inset(-20px 0% -20px 0)", duration: 0.45, ease: "power3.out" }, 0.1);
+    tl.to("#s5-l2", { clipPath: "inset(-20px 0% -20px 0)", duration: 0.55, ease: "power3.out" }, 0.85);
+    ["#s5-k1", "#s5-k2", "#s5-k3"].forEach((id, i) => tl.fromTo(id, { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.32, ease: "back.out(1.8)" }, 2.0 + i * 0.12));
+    window.__timelines["s5-claim"] = tl;
+  </script>
+</template>

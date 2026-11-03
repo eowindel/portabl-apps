@@ -1,0 +1,99 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:#0b0614; overflow:hidden; }
+  #s3-cam { position:absolute; inset:0; }
+  .shot { position:absolute;left:0;top:-18px;width:1920px;height:1117px; }
+  .off { opacity:0; }
+  #s3-dim { position:absolute; inset:0; background:#0b0614; opacity:0; z-index:30; }
+  #s3-win { position:absolute; left:340px; top:150px; width:1240px; height:790px; z-index:40; border-radius:18px; overflow:hidden; background:#101010; box-shadow:0 30px 0 rgba(0,0,0,.35); opacity:0; }
+  #s3-win .bar { height:64px; background:#202124; display:flex; align-items:center; gap:14px; padding:0 22px; font:600 30px "Chakra Petch",sans-serif; color:#e8eaed; }
+  #s3-win .bar i { width:18px; height:18px; border-radius:50%; background:#5f6368; display:block; }
+  #s3-win .view { position:relative; width:1240px; height:726px; overflow:hidden; }
+  #s3-win img { position:absolute; width:1860px; height:1082px; left:-310px; top:-178px; }
+  #s3-zoom { position:absolute; inset:0; z-index:35; background:#0b0614; opacity:0; overflow:hidden; }
+  #s3-zoomcam { position:absolute; inset:0; }
+  #s3-gaugewrap { position:absolute; inset:0; z-index:60; }
+  .gauge { position:absolute; left:960px; top:540px; width:800px; height:800px; }
+  .cursor { position:absolute; left:0; top:0; z-index:50; filter:drop-shadow(0 4px 3px rgba(0,0,0,.35)); }
+  #s3-cursor { z-index:70; }
+  </style>
+  <div id="root" data-composition-id="s3-garage" data-width="1920" data-height="1080">
+    <div id="s3-cam">
+      <img id="s3-grid" class="shot" src="assets/shots/grid.png" alt="">
+      <img id="s3-type1" class="shot off" src="assets/shots/type-1.png" alt="">
+      <img id="s3-type2" class="shot off" src="assets/shots/type-2.png" alt="">
+      <img id="s3-type3" class="shot off" src="assets/shots/type-3.png" alt="">
+      <img id="s3-type4" class="shot off" src="assets/shots/type-4.png" alt="">
+      <img id="s3-type5" class="shot off" src="assets/shots/type-5.png" alt="">
+      <img id="s3-type6" class="shot off" src="assets/shots/type-6.png" alt="">
+      <img id="s3-launch1" class="shot off" src="assets/shots/launch-1.png" alt="">
+      <img id="s3-launch2" class="shot off" src="assets/shots/launch-2.png" alt="">
+      <img id="s3-launch3" class="shot off" src="assets/shots/launch-3.png" alt="">
+      <img id="s3-launch4" class="shot off" src="assets/shots/launch-4.png" alt="">
+      <img id="s3-launch5" class="shot off" src="assets/shots/launch-5.png" alt="">
+      <img id="s3-launch6" class="shot off" src="assets/shots/launch-6.png" alt="">
+      <div id="s3-dim"></div>
+      <svg id="s3-cursor" class="cursor" viewBox="0 0 24 24" width="78" height="78"><path d="M3 2 L3 19 L8 14.5 L11.2 21.5 L14 20.3 L10.9 13.4 L17.5 13.2 Z" fill="#ffffff" stroke="#1b1d24" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </div>
+    <div id="s3-win"><div class="bar"><i></i><i></i><i></i><span style="margin-left:10px">Kanban Turbo</span></div><div class="view"><img src="assets/shots/kanban-app.png" alt=""></div></div>
+    <div id="s3-zoom"><div id="s3-zoomcam">
+      <img id="s3-zg" class="shot" src="assets/shots/grid.png" alt="">
+      <img id="s3-zl" class="shot off" src="assets/shots/launch-6.png" alt="">
+    </div></div>
+    <div id="s3-gaugewrap"><svg id="s3-gauge" class="gauge" viewBox="0 0 64 64" aria-hidden="true">
+      <path id="s3-arc" d="M12 44 A22 22 0 1 1 52 44" fill="none" stroke="#ff2bd6" stroke-width="6" stroke-linecap="round" pathLength="100"/>
+      <line id="s3-needle" x1="32" y1="40" x2="46" y2="26" stroke="#00f0ff" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="32" cy="40" r="5" fill="#f6eaff"/>
+    </svg></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const show = (id, t) => tl.set("#" + id, { opacity: 1 }, t);
+    const hide = (id, t) => tl.set("#" + id, { opacity: 0 }, t);
+    // match cut : le compte-tours du plan 2 devient le logo de la vraie interface
+    tl.fromTo("#s3-gauge", { xPercent: -50, yPercent: -50, x: 0, y: 0, scale: 1, opacity: 1 },
+              { x: -864, y: -496, scale: 0.0785, duration: 0.7, ease: "power3.inOut" }, 0.05);
+    tl.fromTo("#s3-grid", { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power2.out" }, 0.35);
+    tl.set("#s3-gaugewrap", { opacity: 0 }, 0.78);
+    tl.fromTo("#s3-cam", { scale: 1.5, transformOrigin: "0px 0px" }, { scale: 1.5, duration: 0.01 }, 0);
+    // pause sur le logo, puis caméra vers la barre de recherche
+    tl.to("#s3-cam", { scale: 1.55, transformOrigin: "1130px 50px", duration: 0.6, ease: "power3.inOut" }, 0.8);
+    // curseur : arrive de bas à droite, clique dans la recherche
+    tl.fromTo("#s3-cursor", { x: 1800, y: 700, opacity: 0 }, { x: 1096, y: 38, opacity: 1, duration: 0.7, ease: "power2.inOut" }, 0.8);
+    tl.set("#s3-cursor", { scale: 1, transformOrigin: "0 0" }, 0);
+    tl.to("#s3-cursor", { scale: 0.86, duration: 0.1, ease: "power2.out" }, 1.55);
+    tl.to("#s3-cursor", { scale: 1, duration: 0.1, ease: "power2.out" }, 1.65);
+    // frappe réelle, 6 captures
+    const tt = [1.72, 1.88, 2.04, 2.2, 2.36, 2.52];
+    tt.forEach((t, i) => {
+      show("s3-type" + (i + 1), t);
+      if (i > 0) hide("s3-type" + i, t); else hide("s3-grid", t + 0.02);
+    });
+    // caméra reculée, curseur vers la carte, clic = lancement
+    tl.to("#s3-cam", { scale: 1, transformOrigin: "0px 0px", duration: 0.6, ease: "power3.inOut" }, 2.85);
+    tl.to("#s3-cursor", { x: 300, y: 560, duration: 0.55, ease: "power2.inOut" }, 2.85);
+    tl.to("#s3-cursor", { scale: 0.86, duration: 0.1, ease: "power2.out" }, 3.45);
+    tl.to("#s3-cursor", { scale: 1, duration: 0.1, ease: "power2.out" }, 3.55);
+    const lt = [3.55, 3.7, 3.85, 4.0, 4.15];
+    lt.forEach((t, i) => {
+      show("s3-launch" + (i + 1), t);
+      if (i > 0) hide("s3-launch" + i, t); else hide("s3-type6", t);
+    });
+    tl.to("#s3-cursor", { opacity: 0, duration: 0.15 }, 3.75);
+    // la carte devient la fenêtre de l'appli (elle part du centre de la carte)
+    tl.fromTo("#s3-dim", { opacity: 0 }, { opacity: 0.6, duration: 0.3, ease: "power2.out" }, 4.1);
+    tl.fromTo("#s3-win", { opacity: 0, scale: 0.28, x: -560, y: 150, transformOrigin: "50% 50%" },
+              { opacity: 1, scale: 1, x: 0, y: 0, duration: 0.5, ease: "power3.out" }, 4.1);
+    tl.to("#s3-win", { opacity: 0, scale: 0.9, duration: 0.25, ease: "power2.in" }, 5.45);
+    // retour au lanceur : zoom sur les jauges, 64 -> 65 tours
+    tl.fromTo("#s3-zoom", { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power2.out" }, 5.35);
+    tl.fromTo("#s3-zoomcam", { scale: 1.7, transformOrigin: "420px 260px" }, { scale: 2.25, transformOrigin: "420px 260px", duration: 1.8, ease: "power2.out" }, 5.35);
+    show("s3-zl", 6.4); hide("s3-zg", 6.4);
+    tl.fromTo("#s3-zoomcam", { y: 0 }, { y: -10, duration: 0.12, ease: "power3.out", yoyo: true, repeat: 1 }, 6.4);
+    window.__timelines["s3-garage"] = tl;
+  </script>
+</template>

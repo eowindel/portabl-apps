@@ -1,0 +1,72 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:#c9ced6; overflow:hidden; }
+  #s1-cam { position:absolute; inset:0; }
+  
+  .tile { position:absolute; width:500px; height:124px; background:#f4f6f9; border-radius:14px; box-shadow:0 8px 0 rgba(27,29,36,.18);
+          display:flex; align-items:center; gap:18px; padding:0 22px; font:600 30px "Chakra Petch",sans-serif; color:#1b1d24; white-space:nowrap; }
+  .tile .ic { flex:none; width:100px; height:84px; border-radius:12px; display:flex; align-items:center; justify-content:center; font:600 28px "Chakra Petch",sans-serif; color:#1b1d24; letter-spacing:.04em; }
+  .tile.html .ic { background:#ff8a3d; } .tile.exe .ic { background:#5ea0ff; } .tile.url .ic { background:#2ecf8a; }
+  .tile.hit { box-shadow:0 0 0 6px #ff2bd6, 0 8px 0 rgba(27,29,36,.18); }
+
+  #s1-search { position:absolute; left:380px; top:52px; width:1160px; height:104px; border-radius:16px; background:#f4f6f9; box-shadow:0 8px 0 rgba(27,29,36,.18); }
+  #s1-search .mag { position:absolute; left:34px; top:26px; width:48px; height:48px; border:7px solid #1b1d24; border-radius:50%; box-sizing:border-box; }
+  #s1-search .mag::after { content:""; position:absolute; left:34px; top:36px; width:22px; height:7px; background:#1b1d24; border-radius:4px; transform:rotate(45deg); transform-origin:0 50%; }
+  .typed { position:absolute; left:116px; top:0; line-height:104px; font:600 50px "Chakra Petch",sans-serif; color:#1b1d24; opacity:0; white-space:nowrap; }
+  #s1-count { position:absolute; right:34px; top:0; line-height:104px; font:700 34px Orbitron,sans-serif; color:#c4008f; opacity:0; }
+  #s1-which { position:absolute; left:380px; top:176px; padding:14px 30px; background:#1b1d24; color:#fff; font:italic 900 46px Orbitron,sans-serif; letter-spacing:.06em; border-radius:10px; opacity:0; }
+  .cursor { position:absolute; left:0; top:0; z-index:50; filter:drop-shadow(0 4px 3px rgba(0,0,0,.35)); }
+  </style>
+  <div data-hf-id="hf-5s1k" id="root" data-composition-id="s1-bazar" data-width="1920" data-height="1080">
+   <div data-hf-id="hf-d2kf" id="s1-cam">
+    <div data-hf-id="hf-w82l" id="s1-t1" class="tile html hit" style="left:10px;top:250px"><span data-hf-id="hf-l12k" class="ic">HTML</span><span data-hf-id="hf-r9d2" class="nm">kanban (1).html</span></div>
+    <div data-hf-id="hf-2hy2" id="s1-t2" class="tile exe" style="left:480px;top:235px"><span data-hf-id="hf-f9df" class="ic">EXE</span><span data-hf-id="hf-y7rf" class="nm">setup_final_v2.exe</span></div>
+    <div data-hf-id="hf-3ibd" id="s1-t3" class="tile html hit" style="left:950px;top:255px"><span data-hf-id="hf-8hfo" class="ic">HTML</span><span data-hf-id="hf-5a5r" class="nm">kanban-final.html</span></div>
+    <div data-hf-id="hf-0fqk" id="s1-t4" class="tile url" style="left:1420px;top:240px"><span data-hf-id="hf-eyiy" class="ic">URL</span><span data-hf-id="hf-5v1u" class="nm">intranet.url</span></div>
+    <div data-hf-id="hf-46d3" id="s1-t5" class="tile exe" style="left:25px;top:490px"><span data-hf-id="hf-sqs3" class="ic">EXE</span><span data-hf-id="hf-ipe4" class="nm">convertisseur (3).exe</span></div>
+    <div data-hf-id="hf-hgeg" id="s1-t6" class="tile html" style="left:495px;top:470px"><span data-hf-id="hf-7ail" class="ic">HTML</span><span data-hf-id="hf-f74v" class="nm">regex-test.html</span></div>
+    <div data-hf-id="hf-zs5i" id="s1-t7" class="tile html hit" style="left:945px;top:500px"><span data-hf-id="hf-7otm" class="ic">HTML</span><span data-hf-id="hf-ad5n" class="nm">kanban_v2 NEW.html</span></div>
+    <div data-hf-id="hf-8viv" id="s1-t8" class="tile html" style="left:1415px;top:485px"><span data-hf-id="hf-9ocr" class="ic">HTML</span><span data-hf-id="hf-2ebu" class="nm">notes (3).html</span></div>
+    <div data-hf-id="hf-sicm" id="s1-t9" class="tile exe" style="left:5px;top:730px"><span data-hf-id="hf-sch2" class="ic">EXE</span><span data-hf-id="hf-v6u4" class="nm">snapshot.exe</span></div>
+    <div data-hf-id="hf-f12a" id="s1-t10" class="tile html" style="left:470px;top:740px"><span data-hf-id="hf-a2ns" class="ic">HTML</span><span data-hf-id="hf-snqo" class="nm">pomodoro.html</span></div>
+    <div data-hf-id="hf-j0fl" id="s1-t11" class="tile html hit" style="left:940px;top:745px"><span data-hf-id="hf-8vqp" class="ic">HTML</span><span data-hf-id="hf-224x" class="nm">kanban-turbo (1).html</span></div>
+    <div data-hf-id="hf-n0kb" id="s1-t12" class="tile exe" style="left:1420px;top:735px"><span data-hf-id="hf-ry61" class="ic">EXE</span><span data-hf-id="hf-w0ba" class="nm">csv-lab.exe</span></div>
+    <div data-hf-id="hf-rp3e" id="s1-search"><div data-hf-id="hf-1z0t" class="mag"></div>
+      <span data-hf-id="hf-cn8q" id="s1-ty0" class="typed">k</span><span data-hf-id="hf-3qrg" id="s1-ty1" class="typed">ka</span><span data-hf-id="hf-07xf" id="s1-ty2" class="typed">kan</span>
+      <span data-hf-id="hf-ubnm" id="s1-ty3" class="typed">kanb</span><span data-hf-id="hf-mg74" id="s1-ty4" class="typed">kanba</span><span data-hf-id="hf-mrl3" id="s1-ty5" class="typed">kanban</span>
+      <span data-hf-id="hf-qzgs" id="s1-count">4</span>
+    </div>
+    <div data-hf-id="hf-p8f8" id="s1-which">Lequel ?</div>
+    <svg data-hf-id="hf-wbmy" id="s1-cursor" class="cursor" viewBox="0 0 24 24" width="78" height="78"><path data-hf-id="hf-rt8a" d="M3 2 L3 19 L8 14.5 L11.2 21.5 L14 20.3 L10.9 13.4 L17.5 13.2 Z" fill="#ffffff" stroke="#1b1d24" stroke-width="1.6" stroke-linejoin="round"/></svg>
+   </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const rots = [-3,2,-2,3,2,-3,3,-2,-2,3,-3,2];
+    rots.forEach((r, i) => tl.set("#s1-t" + (i + 1), { rotation: r }, 0));
+    // frappe : la lettre « k » est déjà là à la première image, la suite arrive à 0,12 s d'écart
+    const times = [0, 0.14, 0.28, 0.42, 0.56, 0.7];
+    times.forEach((t, i) => {
+      tl.set("#s1-ty" + i, { opacity: 1 }, t);
+      if (i < 5) tl.set("#s1-ty" + i, { opacity: 0 }, times[i + 1]);
+    });
+    // résultats : le compteur apparaît, les 4 tuiles kanban sautent
+    tl.fromTo("#s1-count", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(2.4)" }, 0.95);
+    [1, 3, 7, 11].forEach((n, k) => tl.fromTo("#s1-t" + n, { y: 0 }, { y: -22, duration: 0.14, ease: "power3.out", yoyo: true, repeat: 1 }, 1.0 + k * 0.09));
+    tl.fromTo("#s1-which", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.3, ease: "power3.out" }, 1.65);
+    // le reste des fichiers recule pour laisser lire les résultats
+    [2,4,5,6,8,9,10,12].forEach((n) => tl.fromTo("#s1-t" + n, { opacity: 1 }, { opacity: 0.45, duration: 0.3, ease: "power2.out" }, 1.0));
+    // curseur : cherche, hésite, finit sur la tuile « kanban-turbo (1).html »
+    tl.fromTo("#s1-cursor", { x: 1500, y: 900 }, { x: 760, y: 620, duration: 0.9, ease: "power2.inOut" }, 0.1);
+    tl.to("#s1-cursor", { x: 1130, y: 330, duration: 0.55, ease: "power2.inOut" }, 1.1);
+    tl.to("#s1-cursor", { x: 280, y: 360, duration: 0.55, ease: "power2.inOut" }, 1.75);
+    tl.to("#s1-cursor", { x: 1210, y: 840, duration: 0.6, ease: "power2.inOut" }, 2.4);
+    // caméra : poussée lente sur tout le plan
+    tl.fromTo("#s1-cam", { scale: 1, transformOrigin: "50% 50%" }, { scale: 1.07, duration: 3.5, ease: "none" }, 0);
+    window.__timelines["s1-bazar"] = tl;
+  </script>
+</template>

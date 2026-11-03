@@ -1,0 +1,40 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:#0b0614; overflow:hidden; }
+  .shot { position:absolute;left:0;top:-18px;width:1920px;height:1117px; }
+  .off { opacity:0; }
+  #s4-bar { position:absolute; left:0; right:0; bottom:0; height:84px; background:#0b0614; z-index:5; }
+  .lbl { position:absolute; left:0; right:0; bottom:0; height:84px; line-height:84px; text-align:center; z-index:6; font:italic 900 52px Orbitron,sans-serif; letter-spacing:.14em; color:#f6eaff; }
+  </style>
+  <div id="root" data-composition-id="s4-themes" data-width="1920" data-height="1080">
+    <img id="s4-i0" class="shot off" src="assets/shots/theme-arcade.png" alt="">
+    <img id="s4-i1" class="shot off" src="assets/shots/theme-superbike.png" alt="">
+    <img id="s4-i2" class="shot off" src="assets/shots/theme-enduro.png" alt="">
+    <img id="s4-i3" class="shot off" src="assets/shots/theme-pixel.png" alt="">
+    <img id="s4-i4" class="shot off" src="assets/shots/theme-lol.png" alt="">
+    <img id="s4-i5" class="shot off" src="assets/shots/theme-sommet.png" alt="">
+    <div id="s4-bar"></div>
+    <div id="s4-l0" class="lbl off">NÉON ARCADE</div>
+    <div id="s4-l1" class="lbl off">SUPERBIKE</div>
+    <div id="s4-l2" class="lbl off">ENDURO</div>
+    <div id="s4-l3" class="lbl off">8-BIT</div>
+    <div id="s4-l4" class="lbl off">HEXTECH</div>
+    <div id="s4-l5" class="lbl off">SOMMET</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    for (let i = 0; i < 6; i++) {
+      const t = i * 0.5;
+      tl.set("#s4-i" + i, { opacity: 1 }, t);
+      tl.set("#s4-l" + i, { opacity: 1 }, t);
+      tl.set("#s4-i" + i, { opacity: 0 }, t + 0.5);
+      tl.set("#s4-l" + i, { opacity: 0 }, t + 0.5);
+      tl.fromTo("#s4-i" + i, { scale: 1, transformOrigin: "50% 40%" }, { scale: 1.05, duration: 0.5, ease: "none" }, t);
+    }
+    window.__timelines["s4-themes"] = tl;
+  </script>
+</template>

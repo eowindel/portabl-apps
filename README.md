@@ -1,84 +1,133 @@
-# 🏁 Porta[b]l Apps — garage d'applis
+<div align="center">
 
-Lanceur local, hors réseau, pour applis standalone `.html` et `.exe`, et raccourcis Windows `.lnk` / `.url`.
-Un seul exe de ~4 Mo, sans installation (Tauri 2 + WebView2, déjà présent sur Windows 10/11).
+<img src="docs/img/banner.png" alt="Porta[b]l Apps — your app garage" width="100%">
 
-## Utilisation
+**A local launcher for your standalone apps.**
+Drop your `.html`, `.exe` and shortcuts in a folder: they become cards, ready to start.
+
+[![Build](https://github.com/eowindel/portabl-apps/actions/workflows/build.yml/badge.svg)](https://github.com/eowindel/portabl-apps/actions/workflows/build.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-ff2bd6.svg)](LICENSE)
+![Platforms](https://img.shields.io/badge/Windows%20%7C%20Linux-00f0ff.svg)
+![Tauri 2](https://img.shields.io/badge/Tauri-2-ffd23f.svg)
+
+**English** · [Français](README.fr.md)
+
+</div>
+
+---
+
+## At a glance
+
+- **One ~4 MB executable**: no installer, no account, **fully offline**. Nothing leaves your machine.
+- **Zero configuration**: point it at a folder and every app is described by its own metadata (HTML tags, exe version info, shortcut…).
+- **Built to launch fast**: instant search, favorites, launch counters, full keyboard navigation.
+- **Several themes**: Neon Arcade, Superbike, Enduro, 8-bit, Hextech, Summit.
+- **No framework**: the UI is plain HTML/CSS/JS inside a [Tauri 2](https://tauri.app) shell.
+
+![Neon Arcade](docs/img/theme-arcade.png)
+
+<details>
+<summary>More themes</summary>
+
+| | |
+|---|---|
+| ![Superbike](docs/img/theme-superbike.png) | ![Enduro](docs/img/theme-enduro.png) |
+| ![8-bit](docs/img/theme-pixel.png) | ![Hextech](docs/img/theme-lol.png) |
+| ![Summit](docs/img/theme-sommet.png) | |
+
+</details>
+
+> The interface is currently in French.
+
+## Install
+
+Download the binary for your platform from the [Releases](https://github.com/eowindel/portabl-apps/releases) page:
+
+| Platform | File |
+|---|---|
+| Windows 10/11 | `portabl-apps-windows-x86_64.exe` |
+| Linux x86_64 | `portabl-apps-linux-x86_64` (`chmod +x`) |
+
+Windows needs WebView2 (built into Windows 11 and up-to-date Windows 10). Linux needs WebKitGTK 4.1 (`libwebkit2gtk-4.1`).
+
+## Usage
 
 ```
-PortablApps\
-├── portabl-apps.exe
-├── portabl-apps.json ← réglages, favoris, compteurs (créé automatiquement)
-└── apps\             ← déposez vos applis ici
-    ├── MonOutil.html
-    ├── MonOutil.portal.json   (optionnel)
-    ├── Convertisseur.exe
-    └── GrosseAppli\           (sous-dossier : index.html, un seul .exe, ou portal.json avec "entry")
+PortablApps/
+├── portabl-apps(.exe)
+├── portabl-apps.json   ← settings, favorites, counters (created automatically)
+└── apps/               ← drop your apps here
+    ├── MyTool.html
+    ├── MyTool.portal.json    (optional)
+    ├── Converter.exe
+    └── BigApp/               (subfolder: index.html, a single .exe, a single shortcut, or portal.json with "entry")
 ```
 
-Le dossier est rescanné à chaque retour sur la fenêtre (ou F5). Le dossier scanné se change dans les réglages ⚙.
+The folder is rescanned whenever the window regains focus (or on F5). Change the scanned folder in the settings ⚙.
 
-**Raccourcis** : taper = rechercher · `Ctrl K` · flèches pour naviguer · `Entrée` lancer · `F` favori · `I` / clic droit détails · `E` modifier la fiche · `Échap`.
+**Keyboard**: type to search · `Ctrl K` · arrows to move · `Enter` to launch · `F` favorite · `I` / right-click details · `E` edit the card · `Esc`.
 
-**Applis HTML** : par défaut, chacune s'ouvre dans sa propre fenêtre Edge en mode appli (sans onglets), pour en lancer plusieurs tout en gardant le lanceur à portée. Alternatives dans les réglages : navigateur par défaut, ou navigateur perso avec arguments (`{url}`).
+**HTML apps** open by default in their own browser window in app mode (no tabs): Edge on Windows, Chromium / Chrome / Brave / Edge on Linux. Alternatives in the settings: default browser, or a custom browser with arguments (`{url}`).
 
-## Décrire ses applis
+> **Linux**: `.html` apps launch normally; `.exe` apps and `.lnk` / `.url` shortcuts are listed but only launch on Windows.
 
-Par ordre de priorité :
+## Describing your apps
 
-1. **`MonAppli.portal.json`** à côté du fichier (ou `portal.json` dans le dossier de l'appli), à écrire à la main ou avec l'éditeur ✏️ de l'appli (touche `E`) :
+In order of priority:
+
+1. **`MyApp.portal.json`** next to the file (or `portal.json` in the app folder), written by hand or with the in-app editor ✏️ (key `E`):
    ```json
    {
-     "name": "Mon Appli", "description": "…", "version": "1.2.0", "author": "Moi",
-     "category": "Outils", "tags": ["csv"], "color": "#00f0ff",
+     "name": "My App", "description": "…", "version": "1.2.0", "author": "Me",
+     "category": "Tools", "tags": ["csv"], "color": "#00f0ff",
      "icon": "🏍️", "notes": "…", "hidden": false, "entry": "app.html"
    }
    ```
-   `icon` : emoji ou fichier image (`png`, `svg`, `ico`…). `entry` : seulement pour un dossier.
-2. **Balises du HTML** : `<title>`, favicon, `<meta name="description|author|version">`
-   et `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
-3. **Raccourcis** : un `.lnk` donne sa description et son icône (ou celle de sa cible), un `.url` son adresse et son icône ; le nom est celui du fichier.
-4. **Infos de version de l'exe** : description, version, société, commentaires + icône.
+   `icon`: an emoji or an image file (`png`, `svg`, `ico`…). `entry`: folders only.
+2. **HTML tags**: `<title>`, favicon, `<meta name="description|author|version">`
+   and `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
+3. **Shortcuts**: a `.lnk` provides its description and icon (or its target's), a `.url` its address and icon; the name is the file name.
+4. **Exe version info**: description, version, company, comments + icon.
 
-### Skill Claude Code
+### Claude Code skill
 
-`skills/portabl-apps-meta/` est un skill Claude Code qui renseigne ces infos au bon endroit dans vos autres projets (balises HTML, ressources de l'exe, `.portal.json`). Il fournit aussi `check.mjs`, qui affiche la carte telle que le lanceur la verra :
+[`skills/portabl-apps-meta/`](skills/portabl-apps-meta) is a [Claude Code](https://claude.com/claude-code) skill that fills in this metadata in the right place in your other projects (HTML tags, exe resources, `.portal.json`). It also ships `check.mjs`, which prints the card as the launcher will see it:
 
 ```bash
-node skills/portabl-apps-meta/check.mjs chemin/vers/appli.html
+node skills/portabl-apps-meta/check.mjs path/to/app.html
 ```
 
-Pour l'utiliser dans tous vos projets, copiez le dossier dans `%USERPROFILE%\.claude\skills\` (à refaire après chaque modification du skill ou des règles de détection de `scan.rs`).
+To use it in all your projects, copy the folder to `~/.claude/skills/` (`%USERPROFILE%\.claude\skills\` on Windows), and redo it after any change to the skill or to the detection rules in `scan.rs`.
 
-## Développement
+## Development
 
-Prérequis : Node.js, Rust (`rustup`), MSVC Build Tools.
+Requirements: Node.js, Rust (`rustup`). Windows: MSVC Build Tools. Linux: `libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev`.
 
 ```bash
 npm install
-npm run dev      # appli en mode dev
-npm run build    # → src-tauri/target/release/portabl-apps.exe
+npm run dev      # app in dev mode
+npm run build    # → src-tauri/target/release/portabl-apps(.exe)
+cd src-tauri && cargo test
 ```
 
-- `src/` : interface (HTML/CSS/JS sans framework ni bundler). Thèmes dans `src/themes.css` + liste `THEMES` dans `src/app.js`.
-- `src-tauri/src/scan.rs` : découverte et métadonnées · `lib.rs` : lancement et commandes · `settings.rs` : réglages.
-- `node scripts/preview-server.mjs` : aperçu de l'interface dans un navigateur, avec un backend simulé.
-- `demo-apps/` : applis de démo (les `.exe` de test ne sont pas versionnés).
-- `npm run fonts` : recopie les polices et leurs licences OFL depuis `node_modules` vers `src/fonts`.
+- `src/`: the UI (HTML/CSS/JS, no framework or bundler). Themes live in `src/themes.css` + the `THEMES` list in `src/app.js`.
+- `src-tauri/src/scan.rs`: discovery and metadata · `lib.rs`: launching and commands · `settings.rs`: settings.
+- `node scripts/preview-server.mjs`: preview the UI in a browser, with a mocked backend.
+- `demo-apps/`: demo apps (test `.exe` files are not versioned).
+- `npm run fonts`: copy fonts and their OFL licenses from `node_modules` to `src/fonts`.
+- `docs/`: banner source and README screenshots.
 
-## Publier une version
+### Releasing
 
-1. Changer `version` dans `src-tauri/Cargo.toml` : c'est la seule source, affichée dans le badge de l'appli (garder `package.json` aligné).
-2. Ajouter une section en haut de `CHANGELOG.md` (`## [x.y.z] - AAAA-MM-JJ`, puis `### Ajouté` / `### Modifié` / `### Corrigé`). Le fichier est embarqué dans l'exe et affiché en cliquant sur le badge de version.
-3. `npm run build`, puis copier `src-tauri/target/release/portabl-apps.exe` dans le dossier à distribuer.
-4. Commit + tag : `git tag vx.y.z`.
+1. Bump `version` in `src-tauri/Cargo.toml`: it is the single source, shown in the app's badge (keep `package.json` aligned).
+2. Add a section at the top of `CHANGELOG.md` (`## [x.y.z] - YYYY-MM-DD`, then `### Ajouté` / `### Modifié` / `### Corrigé`). The file is embedded in the exe and shown when clicking the version badge.
+3. Commit, then `git tag vx.y.z && git push --tags`: CI builds Windows and Linux and publishes the binaries to a GitHub release.
 
-## Licence
+## On a corporate PC
 
-[MIT](LICENSE) © 2026 casarou. Les polices embarquées dans `src/fonts/` sont sous licence OFL (voir les fichiers `LICENSE-*.txt`).
+- The exe is not signed: SmartScreen or AppLocker may block it depending on company policy.
+- If the exe's folder is not writable, settings are not saved: put the app in a user folder.
 
-## Sur un PC d'entreprise
+## License
 
-- WebView2 est requis : il est présent d'office sur Windows 11 et sur les Windows 10 à jour.
-- L'exe n'est pas signé : SmartScreen ou AppLocker peuvent le bloquer selon la politique de l'entreprise.
-- Si le dossier de l'exe n'est pas accessible en écriture, les réglages ne sont pas sauvegardés : placez l'appli dans un dossier utilisateur.
+[MIT](LICENSE) © 2026 casarou. Fonts bundled in `src/fonts/` are under the OFL license (see the `LICENSE-*.txt` files).

@@ -1,0 +1,39 @@
+<template>
+  <style>
+  @font-face { font-family: "Orbitron"; font-weight: 900; src: url(assets/fonts/orbitron-latin-900-normal.woff2) format("woff2"); }
+@font-face { font-family: "Orbitron"; font-weight: 700; src: url(assets/fonts/orbitron-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 600; src: url(assets/fonts/chakra-petch-latin-600-normal.woff2) format("woff2"); }
+@font-face { font-family: "Chakra Petch"; font-weight: 400; src: url(assets/fonts/chakra-petch-latin-400-normal.woff2) format("woff2"); }
+  #root { position:absolute; inset:0; background:#0b0614; overflow:hidden; }
+  .gauge { position:absolute; left:110px; top:290px; width:520px; height:520px; }
+  #s6-word { position:absolute; left:720px; top:360px; font:italic 900 104px/1 Orbitron,sans-serif; letter-spacing:.1em; white-space:nowrap; clip-path:inset(-20px 100% -20px 0);
+    background:linear-gradient(180deg,#fff 10%,#00f0ff 45%,#ff2bd6 80%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #s6-word .b { font:600 .78em "Chakra Petch",sans-serif; font-style:normal; letter-spacing:0; -webkit-text-fill-color:#00f0ff; margin:0 .06em; }
+  #s6-sub { position:absolute; left:726px; top:500px; font:600 40px "Chakra Petch",sans-serif; letter-spacing:.2em; color:#c9b3e6; text-transform:uppercase; opacity:0; white-space:nowrap; }
+  #s6-cta { position:absolute; left:726px; top:620px; padding:24px 44px; background:#ff2bd6; color:#0b0614; font:italic 900 44px Orbitron,sans-serif; letter-spacing:.06em; transform:skewX(-8deg); opacity:0; white-space:nowrap; }
+  #s6-cta span { display:inline-block; transform:skewX(8deg); }
+  #s6-flag { position:absolute; left:0; right:0; bottom:0; height:96px; background:conic-gradient(#fff 25%,#0b0614 0 50%,#fff 0 75%,#0b0614 0) 0 0/48px 48px; clip-path:inset(0 100% 0 0); }
+  </style>
+  <div id="root" data-composition-id="s6-fin" data-width="1920" data-height="1080">
+    <svg id="s6-gauge" class="gauge" viewBox="0 0 64 64" aria-hidden="true">
+      <path id="s6-arc" d="M12 44 A22 22 0 1 1 52 44" fill="none" stroke="#ff2bd6" stroke-width="6" stroke-linecap="round" pathLength="100"/>
+      <line id="s6-needle" x1="32" y1="40" x2="46" y2="26" stroke="#00f0ff" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="32" cy="40" r="5" fill="#f6eaff"/>
+    </svg>
+    <div id="s6-word">PORTA<span class="b">[B]</span>L APPS</div>
+    <div id="s6-sub">Windows · Linux · ~4 Mo · MIT</div>
+    <div id="s6-cta"><span>github.com/eowindel/portabl-apps</span></div>
+    <div id="s6-flag"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#s6-gauge", { scale: 1.9, opacity: 1, x: 420, y: 0 }, { scale: 1, x: 0, y: 0, duration: 0.5, ease: "power3.out" }, 0);
+    tl.fromTo("#s6-needle", { rotation: -110, svgOrigin: "32 40" }, { rotation: 60, svgOrigin: "32 40", duration: 0.9, ease: "power2.in" }, 0.25);
+    tl.to("#s6-needle", { rotation: 12, svgOrigin: "32 40", duration: 0.35, ease: "elastic.out(1,0.4)" }, 1.15);
+    tl.to("#s6-flag", { clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "power3.inOut" }, 1.1);
+    tl.to("#s6-word", { clipPath: "inset(-20px 0% -20px 0)", duration: 0.55, ease: "power3.out" }, 1.2);
+    tl.fromTo("#s6-sub", { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.35, ease: "power3.out" }, 1.85);
+    tl.fromTo("#s6-cta", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.6)" }, 2.5);
+    window.__timelines["s6-fin"] = tl;
+  </script>
+</template>

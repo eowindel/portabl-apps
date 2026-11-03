@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * { margin:0; padding:0; box-sizing:border-box; }
+      html, body { width:1920px; height:1080px; overflow:hidden; background:#0b0614; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="28" data-width="1920" data-height="1080">
+    <div id="s1-bazar" data-composition-id="s1-bazar" data-composition-src="compositions/s1-bazar.html" data-start="0" data-duration="3.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div id="s2-dossier" data-composition-id="s2-dossier" data-composition-src="compositions/s2-dossier.html" data-start="3.5" data-duration="4.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div id="s3-garage" data-composition-id="s3-garage" data-composition-src="compositions/s3-garage.html" data-start="8.0" data-duration="7.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div id="s4-themes" data-composition-id="s4-themes" data-composition-src="compositions/s4-themes.html" data-start="15.5" data-duration="3.0" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div id="s5-claim" data-composition-id="s5-claim" data-composition-src="compositions/s5-claim.html" data-start="18.5" data-duration="4.0" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <div id="s6-fin" data-composition-id="s6-fin" data-composition-src="compositions/s6-fin.html" data-start="22.5" data-duration="5.5" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>
+    <audio id="a-whoosh1" class="clip" src="assets/sfx/whoosh.mp3" data-start="3.33" data-duration="0.57" data-track-index="3" data-volume="0.9"></audio>
+    <audio id="a-whoosh2" class="clip" src="assets/sfx/whoosh.mp3" data-start="6.35" data-duration="0.57" data-track-index="4" data-volume="0.9"></audio>
+    <audio id="a-click1" class="clip" src="assets/sfx/click.mp3" data-start="9.48" data-duration="0.37" data-track-index="3" data-volume="1"></audio>
+    <audio id="a-click2" class="clip" src="assets/sfx/click.mp3" data-start="11.38" data-duration="0.37" data-track-index="4" data-volume="1"></audio>
+    <audio id="a-whoosh3" class="clip" src="assets/sfx/whoosh.mp3" data-start="11.93" data-duration="0.57" data-track-index="3" data-volume="0.8"></audio>
+    <audio id="a-pop1" class="clip" src="assets/sfx/pop.mp3" data-start="14.23" data-duration="0.72" data-track-index="4" data-volume="0.9"></audio>
+    <audio id="a-whoosh4" class="clip" src="assets/sfx/whoosh.mp3" data-start="15.33" data-duration="0.57" data-track-index="3" data-volume="0.8"></audio>
+    <audio id="a-pop2" class="clip" src="assets/sfx/pop.mp3" data-start="20.33" data-duration="0.72" data-track-index="4" data-volume="0.6"></audio>
+    <audio id="a-whoosh5" class="clip" src="assets/sfx/whoosh.mp3" data-start="18.33" data-duration="0.57" data-track-index="3" data-volume="0.7"></audio>
+    <audio id="a-riser" class="clip" src="assets/sfx/riser.mp3" data-start="19.35" data-duration="4.3" data-media-start="0.7" data-track-index="5" data-volume="0.3"></audio>
+    <audio id="a-impact" class="clip" src="assets/sfx/impact.mp3" data-start="23.62" data-duration="2.1" data-track-index="6" data-volume="0.5"></audio>
+    <audio id="a-music" class="clip" src="assets/music/bgm.mp3" data-start="3.5" data-duration="24.5" data-media-start="3.5" data-volume="0.4" data-fade-in="0.4" data-fade-out="1.5" data-track-index="2"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
