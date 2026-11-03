@@ -1,6 +1,6 @@
 [package]
 name = "portabl-apps"
-version = "0.7.0"
+version = "0.8.0"
 description = "Porta[b]l Apps — lanceur local pour applis standalone"
 edition = "2021"
 

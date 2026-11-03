@@ -588,6 +588,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(windows)]
     fn reads_windows_exe_metadata() {
         let mut app = AppEntry::default();
         read_exe_meta(Path::new(r"C:\Windows\System32\cmd.exe"), &mut app);
@@ -637,9 +638,10 @@ mod tests {
 
     #[test]
     fn sidecar_next_to_file_or_in_folder() {
-        let root = Path::new(r"C:\apps");
+        let root = if cfg!(windows) { Path::new(r"C:\apps") } else { Path::new("/apps") };
         assert_eq!(sidecar_path(root, &root.join("Kanban.html")), root.join("Kanban.portal.json"));
-        assert_eq!(sidecar_path(root, &root.join(r"Suite\bin\Lanceur.exe")), root.join(r"Suite\portal.json"));
+        let exe = root.join("Suite").join("bin").join("Lanceur.exe");
+        assert_eq!(sidecar_path(root, &exe), root.join("Suite").join("portal.json"));
     }
 
     #[test]

@@ -8,10 +8,10 @@ const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascrip
 const port = Number(process.env.PORT) || 5173;
 
 createServer(async (req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([\\/])+/, "");
+  const path = normalize(decodeURIComponent(new URL(req.url, "http://x").pathname)).replace(/^([\\/])+/, "") || "index.html";
   try {
-    const body = await readFile(join(root, path || "index.html"));
-    res.writeHead(200, { "content-type": types[extname(path || ".html")] || "application/octet-stream" });
+    const body = await readFile(join(root, path));
+    res.writeHead(200, { "content-type": types[extname(path)] || "application/octet-stream" });
     res.end(body);
   } catch {
     res.writeHead(404).end();

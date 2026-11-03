@@ -3,6 +3,15 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.8.0] - 2026-11-03
+
+### Ajouté
+- Porta[b]l Apps fonctionne aussi sous **Linux** : les applis HTML s'ouvrent dans une fenêtre dédiée (Chromium, Chrome, Brave ou Edge trouvé dans le PATH), sinon dans l'application par défaut du système. « Afficher dans le dossier » et « Ouvrir le dossier des applis » passent par `xdg-open`.
+- Une build automatique (GitHub Actions) compile et teste Windows et Linux, et publie les binaires dans une release à chaque tag `vX.Y.Z`.
+
+### Modifié
+- Sous Linux, les applis `.exe` et les raccourcis `.lnk` / `.url` s'affichent mais ne se lancent que sous Windows, avec un message clair.
+
 ## [0.7.0] - 2026-10-27
 
 ### Ajouté

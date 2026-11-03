@@ -13,3 +13,9 @@ easter-eggs-checklist.txt
 # Outils locaux
 .claude/
 *.log
+
+# Vidéo de présentation (HyperFrames) : rendus et caches locaux
+video/renders/
+video/.hyperframes/
+video/.media/
+video/node_modules/

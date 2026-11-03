@@ -1,0 +1,92 @@
+name: Build
+
+# - push / pull request sur main : compile et teste les deux plateformes
+# - tag vX.Y.Z : compile, puis publie les binaires dans une release GitHub
+# - lancement manuel possible depuis l'onglet Actions
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            binary: src-tauri/target/release/portabl-apps.exe
+            asset: portabl-apps-windows-x86_64.exe
+          # 22.04 : lié à une glibc ancienne, le binaire tourne aussi sur Fedora et les distros récentes.
+          - name: Linux
+            os: ubuntu-22.04
+            binary: src-tauri/target/release/portabl-apps
+            asset: portabl-apps-linux-x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dépendances système (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev \
+            librsvg2-dev libayatana-appindicator3-dev build-essential pkg-config
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Installer les dépendances npm
+        run: npm ci
+
+      - name: Tests
+        working-directory: src-tauri
+        run: cargo test
+
+      - name: Compiler (sans paquet, un binaire nu)
+        run: npm run build
+
+      - name: Renommer le binaire
+        shell: bash
+        run: cp "${{ matrix.binary }}" "${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+
+  release:
+    name: Publier la release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

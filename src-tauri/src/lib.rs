@@ -5,6 +5,7 @@ use scan::AppEntry;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use settings::{Settings, Stat};
+#[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -13,6 +14,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
+#[cfg(windows)]
 const CREATE_NEW_CONSOLE: u32 = 0x0000_0010;
 
 struct AppState(Mutex<Settings>);
@@ -88,12 +90,41 @@ fn plain(p: &Path) -> PathBuf {
     PathBuf::from(p.to_string_lossy().trim_start_matches(r"\\?\"))
 }
 
-fn find_edge() -> Option<PathBuf> {
+/// Navigateur capable d'ouvrir une fenêtre dédiée (`--app=`) : Edge sous Windows.
+#[cfg(windows)]
+fn find_app_browser() -> Option<PathBuf> {
     ["ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"]
         .iter()
         .filter_map(|v| std::env::var(v).ok())
         .map(|base| Path::new(&base).join(r"Microsoft\Edge\Application\msedge.exe"))
         .find(|p| p.is_file())
+}
+
+/// Sous Linux : le premier navigateur Chromium / Chrome / Brave / Edge trouvé dans le PATH.
+#[cfg(unix)]
+fn find_app_browser() -> Option<PathBuf> {
+    let path = std::env::var_os("PATH")?;
+    let dirs: Vec<PathBuf> = std::env::split_paths(&path).collect();
+    [
+        "chromium",
+        "chromium-browser",
+        "google-chrome",
+        "google-chrome-stable",
+        "brave-browser",
+        "microsoft-edge",
+        "microsoft-edge-stable",
+    ]
+    .iter()
+    .find_map(|name| dirs.iter().map(|d| d.join(name)).find(|p| p.is_file()))
+}
+
+/// Ouvre un fichier ou un dossier avec l'application par défaut du système.
+fn open_default(target: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    let mut cmd = Command::new("explorer.exe");
+    #[cfg(unix)]
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(target).spawn().map(|_| ()).map_err(|e| e.to_string())
 }
 
 fn open_html(s: &Settings, path: &Path) -> Result<(), String> {
@@ -107,12 +138,12 @@ fn open_html(s: &Settings, path: &Path) -> Result<(), String> {
             let args = args.split_whitespace().map(|a| a.replace("{url}", &url)).collect();
             spawn(Path::new(s.browser_path.trim()), args)
         }
-        "app" => match find_edge() {
+        "app" => match find_app_browser() {
             // Fenêtre dédiée sans barre d'onglets : chaque appli HTML ressemble à une appli native.
-            Some(edge) => spawn(&edge, vec![format!("--app={url}"), "--new-window".into()]),
-            None => spawn(Path::new("explorer.exe"), vec![path.to_string_lossy().into()]),
+            Some(browser) => spawn(&browser, vec![format!("--app={url}"), "--new-window".into()]),
+            None => open_default(path),
         },
-        _ => spawn(Path::new("explorer.exe"), vec![path.to_string_lossy().into()]),
+        _ => open_default(path),
     }
 }
 
@@ -122,6 +153,7 @@ fn launch(id: String, path: String, state: State<AppState>) -> Result<Settings, 
     let p = plain(&checked_path(&s, &path)?);
     let ext = p.extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
     match ext.as_str() {
+        #[cfg(windows)]
         "exe" => {
             Command::new(&p)
                 .current_dir(p.parent().unwrap_or(Path::new(".")))
@@ -130,11 +162,17 @@ fn launch(id: String, path: String, state: State<AppState>) -> Result<Settings, 
                 .map_err(|e| format!("Lancement impossible : {e}"))?;
         }
         // Windows ouvre le raccourci lui-même : cible, arguments et dossier de départ sont respectés.
+        #[cfg(windows)]
         "lnk" | "url" => {
             Command::new("explorer.exe")
                 .arg(&p)
                 .spawn()
                 .map_err(|e| format!("Lancement impossible : {e}"))?;
+        }
+        // Sous Linux, seules les applis HTML se lancent.
+        #[cfg(unix)]
+        "exe" | "lnk" | "url" => {
+            return Err("Les applis .exe et les raccourcis .lnk / .url ne se lancent que sous Windows".into());
         }
         _ => open_html(&s, &p)?,
     }
@@ -149,18 +187,26 @@ fn launch(id: String, path: String, state: State<AppState>) -> Result<Settings, 
 fn reveal(path: String, state: State<AppState>) -> Result<(), String> {
     let s = state.0.lock().unwrap();
     let p = plain(&checked_path(&s, &path)?);
-    Command::new("explorer.exe")
-        .raw_arg(format!("/select,\"{}\"", p.display()))
-        .spawn()
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+    #[cfg(windows)]
+    {
+        Command::new("explorer.exe")
+            .raw_arg(format!("/select,\"{}\"", p.display()))
+            .spawn()
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    }
+    // xdg-open ne sait pas sélectionner un fichier : on ouvre son dossier.
+    #[cfg(unix)]
+    {
+        open_default(p.parent().unwrap_or(&p))
+    }
 }
 
 #[tauri::command]
 fn open_apps_dir(state: State<AppState>) -> Result<(), String> {
     let dir = state.0.lock().unwrap().apps_dir();
     let _ = std::fs::create_dir_all(&dir);
-    Command::new("explorer.exe").arg(dir).spawn().map(|_| ()).map_err(|e| e.to_string())
+    open_default(&dir)
 }
 
 /// Champs qu'on accepte d'écrire dans un .portal.json depuis l'éditeur.
