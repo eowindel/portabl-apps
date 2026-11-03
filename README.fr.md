@@ -103,6 +103,12 @@ node skills/portabl-apps-meta/check.mjs chemin/vers/appli.html
 
 Pour l'utiliser dans tous tes projets, copie le dossier dans `~/.claude/skills/` (`%USERPROFILE%\.claude\skills\` sous Windows), à refaire après chaque modification du skill ou des règles de détection de `scan.rs`.
 
+## Applis compatibles
+
+Des applis qui fournissent déjà leurs métadonnées et s'affichent comme une vraie carte :
+
+- **[BoMarkdown Studio](https://github.com/eowindel/bomarkdown-studio)** : un éditeur de nomenclatures (BOM) dans un seul fichier HTML. Concevez la structure d'un produit en texte, en graphique, ou les deux à la fois, et exportez en SVG ou en PNG.
+
 ## Développement
 
 Prérequis : Node.js, Rust (`rustup`). Windows : MSVC Build Tools. Linux : `libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev`.
