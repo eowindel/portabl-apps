@@ -12,6 +12,11 @@ Drop your `.html`, `.exe` and shortcuts in a folder: they become cards, ready to
 
 **English** · [Français](README.fr.md)
 
+
+https://github.com/user-attachments/assets/6ff1a0c2-4b54-4906-993f-a02df4cf1429
+
+
+
 </div>
 
 ---
