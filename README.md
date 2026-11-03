@@ -104,6 +104,12 @@ node skills/portabl-apps-meta/check.mjs path/to/app.html
 
 To use it in all your projects, copy the folder to `~/.claude/skills/` (`%USERPROFILE%\.claude\skills\` on Windows), and redo it after any change to the skill or to the detection rules in `scan.rs`.
 
+## Compatible apps
+
+Apps that already ship their metadata and show up as a proper card:
+
+- **[BoMarkdown Studio](https://github.com/eowindel/bomarkdown-studio)**: a bill-of-materials (BOM) editor in a single HTML file. Design a product structure as text, as a diagram, or both at once, and export to SVG or PNG.
+
 ## Development
 
 Requirements: Node.js, Rust (`rustup`). Windows: MSVC Build Tools. Linux: `libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev librsvg2-dev libayatana-appindicator3-dev`.
