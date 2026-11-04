@@ -65,7 +65,8 @@ code { font-family: Consolas, monospace; font-size: .92em; background: var(--chi
 .changelog-version h3 { margin: 0; font: 900 18px var(--font-display); color: var(--accent); letter-spacing: .04em; text-transform: none; }
 .changelog-version time { font-size: 12px; color: var(--muted); }
 .changelog-version .current { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; background: var(--accent); color: var(--bg); }
-.brand h1 .b { font-size: .62em; vertical-align: .18em; letter-spacing: 0; opacity: .8; }
+/* pas d'opacity ici : elle isole le span du background-clip:text du h1 (texte transparent => [B] invisible sous WebKitGTK/Linux) */
+.brand h1 .b { font-size: .62em; vertical-align: .18em; letter-spacing: 0; }
 .tagline { margin: 4px 0 0; font-size: 11px; letter-spacing: .35em; text-transform: uppercase; color: var(--muted); }
 @keyframes idle-needle { 0%, 100% { transform: rotate(-70deg); } 50% { transform: rotate(-55deg); } }
 body.revving .brand-logo .needle { animation: rev-needle .7s ease-out; }
