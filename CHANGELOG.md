@@ -3,6 +3,11 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.8.2] - 2026-11-04
+
+### Corrigé
+- Linux : la liste déroulante de tri avait un fond blanc et un texte illisible ; elle reprend maintenant les couleurs du thème.
+
 ## [0.8.1] - 2026-11-04
 
 ### Corrigé

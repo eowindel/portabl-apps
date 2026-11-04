@@ -120,9 +120,17 @@ kbd { font: 11px var(--font-body); color: var(--muted); border: 1px solid var(--
 .chip .n { opacity: .65; margin-left: 4px; }
 .sort {
   height: 36px; padding: 0 10px; cursor: pointer;
-  background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
+  /* fond opaque + appearance:none : sous Linux le rendu natif (GTK) donnait un select blanc au texte illisible */
+  appearance: none; -webkit-appearance: none; color: var(--text);
+  padding-right: 28px;
+  background: linear-gradient(var(--panel), var(--panel)) var(--bg-2);
+  background-image: linear-gradient(var(--panel), var(--panel)),
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: 0 0, calc(100% - 15px) 15px, calc(100% - 10px) 15px;
+  background-size: 100% 100%, 5px 5px, 5px 5px; background-repeat: no-repeat;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
 }
-.sort option { background: var(--bg-2); }
+.sort option { background: var(--bg-2); color: var(--text); }
 
 /* ------------------------------------------------------------------ cartes */
 main { flex: 1; padding: 16px 32px 24px; }
