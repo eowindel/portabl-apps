@@ -363,8 +363,45 @@ async fn pick_folder(app: tauri::AppHandle) -> Option<String> {
         .map(|p| p.to_string_lossy().into_owned())
 }
 
+/// Linux : un binaire nu n'a ni icône ni lanceur pour le dock. On installe donc, au
+/// démarrage, une entrée `.desktop` (nom = identifiant de l'appli = app_id Wayland) et
+/// l'icône dans `~/.local/share`, avec `Exec` pointant vers le binaire en cours.
+#[cfg(target_os = "linux")]
+fn install_desktop_entry() {
+    use std::fs;
+    const ID: &str = "dev.portablapps.launcher";
+    let (Some(home), Ok(exe)) = (std::env::var_os("HOME"), std::env::current_exe()) else { return };
+    let share = std::path::Path::new(&home).join(".local/share");
+    let icon_path = share.join("icons/hicolor/128x128/apps").join(format!("{ID}.png"));
+    let desktop_path = share.join("applications").join(format!("{ID}.desktop"));
+    let exec = exe.to_string_lossy().replace('\\', "\\\\").replace('"', "\\\"");
+    let desktop = format!(
+        "[Desktop Entry]\nType=Application\nName=Porta[b]l Apps\n\
+         Comment=Lanceur local pour applis standalone\nExec=\"{exec}\"\nIcon={ID}\n\
+         Terminal=false\nCategories=Utility;\nStartupWMClass={ID}\n"
+    );
+    let icon = include_bytes!("../icons/128x128.png");
+    let _ = (|| -> std::io::Result<()> {
+        if fs::read(&icon_path).ok().as_deref() != Some(icon.as_slice()) {
+            fs::create_dir_all(icon_path.parent().unwrap())?;
+            fs::write(&icon_path, icon)?;
+        }
+        if fs::read_to_string(&desktop_path).ok().as_deref() != Some(desktop.as_str()) {
+            fs::create_dir_all(desktop_path.parent().unwrap())?;
+            fs::write(&desktop_path, &desktop)?;
+        }
+        Ok(())
+    })();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    {
+        // GDK en déduit l'app_id Wayland / la classe X11 : doit égaler le nom du .desktop.
+        glib::set_prgname(Some("dev.portablapps.launcher"));
+        install_desktop_entry();
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState(Mutex::new(Settings::load())))

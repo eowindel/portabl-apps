@@ -2278,9 +2278,10 @@ dependencies = [
 
 [[package]]
 name = "portabl-apps"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "base64 0.22.1",
+ "glib",
  "pelite",
  "regex",
  "serde",

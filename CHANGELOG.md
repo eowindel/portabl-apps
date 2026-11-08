@@ -3,6 +3,11 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.8.3] - 2026-11-08
+
+### Corrigé
+- Linux : l'appli n'avait pas d'icône dans la barre des tâches (un « W » générique) et l'épingler ne permettait pas de la relancer. Elle crée maintenant son lanceur (`~/.local/share/applications`) et son icône au démarrage.
+
 ## [0.8.2] - 2026-11-04
 
 ### Corrigé
