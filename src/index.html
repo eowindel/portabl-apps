@@ -106,6 +106,14 @@
         <input id="set-bargs" type="text" placeholder="--app={url}" spellcheck="false">
       </div>
 
+      <h3>Mises à jour</h3>
+      <label class="toggle"><input type="checkbox" id="set-updates"> Chercher les nouvelles versions sur GitHub <small class="hint">— le lanceur et les applis qui déclarent un dépôt</small></label>
+      <p class="hint">Désactivé par défaut : rien ne sort sur internet sans votre accord. Une fois activé, seul <code>api.github.com</code> est contacté (au plus une fois par jour et par dépôt). Rien n'est téléchargé ni installé : une pastille signale la nouveauté, avec un lien vers la release.</p>
+      <div class="row" id="upd-row" hidden>
+        <button class="btn" id="upd-now">Vérifier maintenant</button>
+        <span class="hint" id="upd-status"></span>
+      </div>
+
       <p class="hint" style="margin-top:24px">Comment ranger et décrire ses applis ? <button class="btn" id="settings-help">📖 Mode d'emploi</button></p>
     </div>
   </div>
@@ -147,6 +155,7 @@
           <small class="hint">Un emoji (🔧, 🏍️…) ou une image. Une image choisie ailleurs est copiée à côté de l'appli.</small>
         </div>
         <label class="ed-field wide" id="ed-entry-field"><span>Fichier lancé (entry)</span><input type="text" name="entry" spellcheck="false"></label>
+        <label class="ed-field wide"><span>Dépôt GitHub <small class="hint">— pour être prévenu des nouvelles versions</small></span><input type="text" name="repo" spellcheck="false"></label>
         <label class="ed-field wide"><span>Notes</span><textarea name="notes" rows="3"></textarea></label>
         <label class="toggle wide"><input type="checkbox" name="hidden"> Masquer cette appli <small class="hint">— elle reste accessible via le filtre « Masquées »</small></label>
       </div>
@@ -262,12 +271,14 @@
   "color": "#00f0ff",
   "icon": "🔧",
   "notes": "Raccourcis, astuces…",
+  "repo": "moi/mon-appli",
   "hidden": false,
   "entry": "app.html"
 }</pre>
         <ul>
           <li><code>icon</code> : un emoji, ou une image à côté (<code>"logo.png"</code>, <code>.svg</code>, <code>.ico</code>, <code>.jpg</code>…).</li>
           <li><code>category</code> : crée automatiquement un filtre en haut de l'écran.</li>
+          <li><code>repo</code> : dépôt GitHub (<code>propriétaire/nom</code>) ; avec les mises à jour activées, une pastille ⬆ apparaît quand sa dernière release est plus récente que <code>version</code>.</li>
           <li><code>hidden</code> : <code>true</code> masque l'appli sans la supprimer.</li>
           <li><code>entry</code> : seulement pour un sous-dossier.</li>
         </ul>
@@ -280,7 +291,8 @@
 &lt;meta name="portal:tags" content="csv, export"&gt;
 &lt;meta name="portal:color" content="#00f0ff"&gt;
 &lt;meta name="portal:icon" content="🔧"&gt;
-&lt;meta name="portal:notes" content="…"&gt;</pre>
+&lt;meta name="portal:notes" content="…"&gt;
+&lt;meta name="portal:repo" content="moi/mon-appli"&gt;</pre>
         <h4>3. Les infos du raccourci</h4>
         <p>Un raccourci Windows (<code>.lnk</code>) fournit sa description et son icône (ou celle de sa cible) ; un raccourci internet (<code>.url</code>) fournit son adresse et son icône. Le nom est celui du fichier : renommez le raccourci, ou utilisez l'éditeur ✏️. Un clic lance le raccourci comme un double-clic dans l'explorateur : arguments et dossier de départ sont respectés, la cible peut être n'importe où (dossier, document, site).</p>
         <h4>4. Les infos de l'exe</h4>
@@ -316,6 +328,7 @@
         <ul>
           <li><b>Dossier des applis</b> : n'importe quel dossier (local, réseau, clé USB). Chemin relatif = relatif à l'exe.</li>
           <li><b>Thème</b> : change l'ambiance et les textes. Chaque thème a sa personnalité, prenez le temps de les explorer…</li>
+          <li><b>Mises à jour</b> : désactivées par défaut. Activées, le lanceur interroge GitHub (<code>api.github.com</code> uniquement, une fois par jour au plus) pour lui-même et pour les applis qui déclarent un <code>repo</code>. Il signale seulement : rien n'est téléchargé ni installé.</li>
           <li><b>Ouverture des applis HTML</b> :
             <ul>
               <li><i>Fenêtre dédiée</i> (par défaut) : chaque appli s'ouvre dans sa propre fenêtre Edge, sans onglets ni barre d'adresse. Pratique pour en ouvrir plusieurs.</li>

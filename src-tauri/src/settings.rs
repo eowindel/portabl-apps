@@ -25,6 +25,10 @@ pub struct Settings {
     pub browser_args: String,
     pub favorites: Vec<String>,
     pub stats: HashMap<String, Stat>,
+    /// Autorisation de contacter GitHub pour chercher les mises à jour (désactivée par défaut).
+    pub check_updates: bool,
+    /// Dernière release connue de chaque dépôt (voir `update.rs`).
+    pub update_cache: HashMap<String, crate::update::Release>,
 }
 
 impl Default for Settings {
@@ -37,6 +41,8 @@ impl Default for Settings {
             browser_args: "{url}".into(),
             favorites: Vec::new(),
             stats: HashMap::new(),
+            check_updates: false,
+            update_cache: HashMap::new(),
         }
     }
 }

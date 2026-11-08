@@ -3,6 +3,12 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.9.0] - 2026-11-08
+
+### Ajouté
+- **Mises à jour** : en activant l'option dans les réglages (désactivée par défaut), le lanceur cherche la dernière release GitHub de lui-même et des applis qui déclarent un dépôt (`repo` dans le `.portal.json`, ou `<meta name="portal:repo">`). Une pastille ⬆ apparaît sur la carte, dans la fiche et sur le badge de version, avec un lien vers la release. Seul `api.github.com` est contacté, au plus une fois par jour et par dépôt ; rien n'est téléchargé ni installé.
+- Champ « Dépôt GitHub » dans l'éditeur de fiche.
+
 ## [0.8.3] - 2026-11-08
 
 ### Corrigé

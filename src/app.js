@@ -106,6 +106,8 @@ const api = window.__TAURI__ ? {
   openAppsDir: () => window.__TAURI__.core.invoke("open_apps_dir"),
   pickFolder: () => window.__TAURI__.core.invoke("pick_folder"),
   about: () => window.__TAURI__.core.invoke("about"),
+  checkUpdates: (force) => window.__TAURI__.core.invoke("check_updates", { force }),
+  openUrl: (url) => window.__TAURI__.core.invoke("open_url", { url }),
   saveMeta: (app, fields) => window.__TAURI__.core.invoke("save_meta", { path: app.path, fields }),
   pickIcon: (app) => window.__TAURI__.core.invoke("pick_icon", { path: app.path }),
 } : mockApi();
@@ -263,6 +265,11 @@ const lapsHtml = (app) => {
 };
 const lastText = (app) => statOf(app).last ? ago(statOf(app).last) : flavor().never;
 
+function updBadge(app) {
+  const up = appUpdate(app);
+  return up ? `<span class="upd" data-url="${esc(up.url)}" title="Nouvelle version ${esc(tagText(up.tag))} : voir la release">⬆ ${esc(tagText(up.tag))}</span>` : "";
+}
+
 function cardHtml(app, i) {
   const stat = statOf(app);
   const fav = isFav(app);
@@ -277,6 +284,7 @@ function cardHtml(app, i) {
         <div class="meta-line">
           <span class="badge ${app.kind}">${app.kind}</span>
           ${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}
+          ${updBadge(app)}
           ${app.category ? `<span>· ${esc(app.category)}</span>` : ""}
         </div>
       </div>
@@ -424,6 +432,7 @@ function renderDrawer(app) {
   const facts = [
     ["Version", app.version],
     ["Auteur", app.author],
+    ["Dépôt", app.repo],
     ["Catégorie", app.category],
     ["Tags", app.tags.join(", ")],
     ["Tours", `${stat.count} — dernier : ${ago(stat.last)}`],
@@ -435,7 +444,7 @@ function renderDrawer(app) {
   $("#drawer-body").innerHTML = `
     <div style="--c:${esc(colorOf(app))}">${iconHtml(app)}</div>
     <h2>${esc(app.name)}</h2>
-    <div class="meta-line"><span class="badge ${app.kind}">${app.kind}</span>${app.hidden ? "<span>· masquée</span>" : ""}${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}</div>
+    <div class="meta-line"><span class="badge ${app.kind}">${app.kind}</span>${app.hidden ? "<span>· masquée</span>" : ""}${app.version ? `<span>v${esc(app.version.replace(/^v/i, ""))}</span>` : ""}${updBadge(app)}</div>
     ${app.description ? `<p class="desc">${esc(app.description)}</p>` : ""}
     <div class="drawer-actions">
       <button class="btn primary" data-dact="launch">▶ Lancer</button>
@@ -458,6 +467,61 @@ $("#drawer").addEventListener("click", async (e) => {
   if (act === "reveal") api.reveal(app).catch((err) => toast(String(err), true));
 });
 
+// ------------------------------------------------------------------ mises à jour
+// Notification seulement : le backend interroge GitHub (si autorisé), ici on compare et on signale.
+state.updates = { launcherRepo: "", releases: {}, error: null };
+
+const versionParts = (v) => (String(v).replace(/^[^\d]*/, "").match(/\d+/g) || []).map(Number);
+function isNewer(latest, current) {
+  const a = versionParts(latest), b = versionParts(current);
+  if (!a.length || !b.length) return false;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = (a[i] || 0) - (b[i] || 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+const releaseOf = (repo) => (repo && state.updates.releases[repo]) || null;
+// Release plus récente que `current`, ou null.
+function newerRelease(repo, current) {
+  const r = releaseOf(repo);
+  return r && r.tag && isNewer(r.tag, current) ? r : null;
+}
+const appUpdate = (app) => newerRelease(app.repo, app.version);
+const launcherUpdate = () => newerRelease(state.updates.launcherRepo, about.version);
+const tagText = (tag) => `v${tag.replace(/^v/i, "")}`;
+
+function renderUpdates() {
+  const up = launcherUpdate();
+  versionBadge.classList.toggle("update", !!up);
+  versionBadge.title = up ? `Nouvelle version ${tagText(up.tag)} disponible` : "Nouveautés";
+  render();
+  if (state.detail) { const app = appById(state.detail); if (app) renderDrawer(app); }
+}
+
+async function checkUpdates({ force = false } = {}) {
+  if (!state.settings.checkUpdates) return;
+  const status = $("#upd-status");
+  status.textContent = "Vérification…";
+  try {
+    state.updates = await api.checkUpdates(force);
+    const n = state.apps.filter(appUpdate).length + (launcherUpdate() ? 1 : 0);
+    status.textContent = state.updates.error
+      ? `⚠ ${state.updates.error}`
+      : n ? `${n} mise${n > 1 ? "s" : ""} à jour disponible${n > 1 ? "s" : ""}` : "Tout est à jour";
+    renderUpdates();
+  } catch (e) {
+    status.textContent = `⚠ ${e}`;
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("[data-url]");
+  if (!link) return;
+  e.stopPropagation();
+  api.openUrl(link.dataset.url).catch((err) => toast(String(err), true));
+}, true);
+
 // ------------------------------------------------------------------ réglages
 function openSettings() {
   const s = state.settings;
@@ -466,6 +530,8 @@ function openSettings() {
   $("#set-bargs").value = s.browserArgs || "{url}";
   for (const r of document.querySelectorAll("input[name=bmode]")) r.checked = r.value === s.browserMode;
   $(".custom-browser").hidden = s.browserMode !== "custom";
+  $("#set-updates").checked = !!s.checkUpdates;
+  $("#upd-row").hidden = !s.checkUpdates;
   renderThemePicker();
   $("#settings").classList.add("open");
   $("#settings").setAttribute("aria-hidden", "false");
@@ -517,6 +583,13 @@ for (const r of document.querySelectorAll("input[name=bmode]")) {
     savePrefs({ browserMode: r.value });
   });
 }
+$("#set-updates").addEventListener("change", async (e) => {
+  await savePrefs({ checkUpdates: e.target.checked });
+  $("#upd-row").hidden = !e.target.checked;
+  if (e.target.checked) checkUpdates({ force: true });
+  else { state.updates = { launcherRepo: "", releases: {}, error: null }; $("#upd-status").textContent = ""; renderUpdates(); }
+});
+$("#upd-now").addEventListener("click", () => checkUpdates({ force: true }));
 $("#set-bpath").addEventListener("change", (e) => savePrefs({ browserPath: e.target.value.trim() }));
 $("#set-bargs").addEventListener("change", (e) => savePrefs({ browserArgs: e.target.value.trim() }));
 
@@ -551,7 +624,7 @@ $("#btn-help").addEventListener("click", openManual);
 // laisse la place à la valeur détectée (balises HTML, infos de l'exe), affichée en grisé.
 const editor = $("#editor");
 const editorForm = $("#editor-form");
-const TEXT_FIELDS = ["name", "description", "version", "author", "category", "color", "icon", "notes", "entry"];
+const TEXT_FIELDS = ["name", "description", "version", "author", "category", "color", "icon", "notes", "repo", "entry"];
 const ed = { app: null, tags: [], icon: { value: "", preview: "" } };
 const field = (name) => editorForm.elements[name];
 
@@ -698,6 +771,7 @@ api.about().then((a) => {
   about = a;
   versionBadge.textContent = `v${a.version}`;
   versionBadge.classList.toggle("new", store("seenVersion") !== a.version);
+  renderUpdates(); // si la vérification a fini avant la lecture de la version
 }).catch(() => { versionBadge.hidden = true; });
 
 // Rendu minimal du CHANGELOG.md : titres de version, sections, listes, `code` et **gras**.
@@ -734,7 +808,9 @@ function renderChangelog(md, current) {
 function openChangelog() {
   closeSettings();
   closeManual();
-  $("#changelog-body").innerHTML = renderChangelog(about.changelog, about.version);
+  const up = launcherUpdate();
+  const banner = up ? `<div class="update-banner"><span>⬆ <b>${esc(tagText(up.tag))}</b> est disponible (vous avez v${esc(about.version)}).</span><button class="btn primary" data-url="${esc(up.url)}">Voir la release</button></div>` : "";
+  $("#changelog-body").innerHTML = banner + renderChangelog(about.changelog, about.version);
   changelog.classList.add("open");
   changelog.setAttribute("aria-hidden", "false");
   store("seenVersion", about.version);
@@ -955,7 +1031,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-load();
+load().then(() => checkUpdates());
 
 // ------------------------------------------------------------------ backend simulé (aperçu navigateur)
 function mockApi() {
@@ -1016,6 +1092,10 @@ function mockApi() {
       }
       app.hidden = !!app.sidecar.hidden;
     },
+    checkUpdates: async () => ({ launcherRepo: "eowindel/portabl-apps", error: null, releases: {
+      "eowindel/portabl-apps": { tag: "v9.9.9", url: "https://github.com/eowindel/portabl-apps/releases/tag/v9.9.9" },
+    } }),
+    openUrl: async (url) => { window.open(url, "_blank", "noopener"); },
     about: async () => ({ version: "0.0.0-dev", licenses: [{ name: "Porta[b]l Apps — MIT", text: "(texte lu dans l'appli)" }], changelog: "## [0.0.0-dev] - 2026-01-01\n\n### Ajouté\n- Aperçu navigateur : le vrai changelog n'est lu que dans l'appli." }),
   };
 }

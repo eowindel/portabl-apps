@@ -402,3 +402,15 @@ dl.faq dd { margin: 4px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* mises à jour disponibles */
+.upd {
+  display: inline-block; padding: 1px 7px; border-radius: 999px; cursor: pointer;
+  background: var(--accent); color: var(--bg); font: 700 10px var(--font-body); letter-spacing: .06em;
+}
+.version-badge.update { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.update-banner {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 8px; padding: 10px 14px;
+  border: 1px solid var(--accent); border-radius: 8px; box-shadow: 0 0 14px var(--glow);
+}
+.update-banner span { flex: 1; min-width: 180px; }

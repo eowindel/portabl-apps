@@ -40,6 +40,7 @@ Le lanceur lit, du moins prioritaire au plus prioritaire : nom du fichier → in
   <meta name="portal:color" content="#00f0ff">
   <meta name="portal:icon" content="🔧">
   <meta name="portal:notes" content="Raccourcis, astuces, limites connues…">
+  <meta name="portal:repo" content="auteur/depot-github">
   <link rel="icon" href="data:image/svg+xml,…">
 </head>
 ```
@@ -49,6 +50,7 @@ Points de détection à respecter (le lanceur lit ces balises avec une analyse s
 - Attributs entre guillemets (`"` ou `'`), `name` et `content` sur la même balise. Les entités `&amp; &lt; &gt; &quot; &#39;` sont décodées, pas les autres.
 - Équivalents acceptés : `application-name` ou `portal:name` (prioritaires sur `<title>`), `keywords` pour les tags, `theme-color` pour la couleur, `portal:description` / `portal:version` / `portal:author`.
 - `portal:tags` : liste séparée par des virgules.
+- `portal:repo` : dépôt GitHub de l'appli (`auteur/depot`, ou son URL) ; si l'utilisateur a activé les mises à jour, le lanceur y compare la dernière release à `version` (tag type `v1.2.0`). Pour une appli EXE, mettre `"repo"` dans le `.portal.json`.
 - `portal:color` : une couleur CSS ; préférer `#rrggbb`, que l'éditeur du lanceur sait afficher.
 - Icône, au choix :
   - `portal:icon` avec un **emoji ou un sigle de 4 caractères max** ;

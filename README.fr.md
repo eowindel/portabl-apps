@@ -24,7 +24,7 @@ https://github.com/user-attachments/assets/884c824c-6b39-4d2e-bde3-641718aba9c7
 
 ## En bref
 
-- **Un seul exécutable de ~4 Mo**, sans installation, sans compte, **hors réseau** : rien ne sort de ta machine.
+- **Un seul exécutable de ~4 Mo**, sans installation, sans compte, **hors réseau par défaut** : rien ne sort de ta machine, sauf si tu actives la vérification des mises à jour (réglages), qui contacte uniquement `api.github.com` pour signaler les nouvelles releases du lanceur et des applis qui déclarent un `repo`. Elle ne télécharge ni n'installe rien.
 - **Zéro configuration** : tout dossier est scanné, chaque appli est décrite par ses propres métadonnées (balises HTML, infos de version de l'exe, raccourci…).
 - **Pensé pour lancer vite** : recherche instantanée, favoris, compteur de lancements, navigation au clavier.
 - **Plusieurs thèmes** : Néon Arcade, Superbike, Enduro, 8-bit, Hextech, Sommet.
@@ -84,12 +84,12 @@ Par ordre de priorité :
    {
      "name": "Mon Appli", "description": "…", "version": "1.2.0", "author": "Moi",
      "category": "Outils", "tags": ["csv"], "color": "#00f0ff",
-     "icon": "🏍️", "notes": "…", "hidden": false, "entry": "app.html"
+     "icon": "🏍️", "notes": "…", "repo": "moi/mon-appli", "hidden": false, "entry": "app.html"
    }
    ```
    `icon` : emoji ou fichier image (`png`, `svg`, `ico`…). `entry` : seulement pour un dossier.
 2. **Balises du HTML** : `<title>`, favicon, `<meta name="description|author|version">`
-   et `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
+   et `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes|portal:repo">`.
 3. **Raccourcis** : un `.lnk` donne sa description et son icône (ou celle de sa cible), un `.url` son adresse et son icône ; le nom est celui du fichier.
 4. **Infos de version de l'exe** : description, version, société, commentaires + icône.
 

@@ -102,7 +102,7 @@ function readSidecar(file) {
     warn(`${basename(file)} doit contenir un objet { … } : il sera ignoré.`);
     return null;
   }
-  const types = { name: "string", description: "string", version: "string", author: "string", category: "string", color: "string", icon: "string", notes: "string", entry: "string", hidden: "boolean" };
+  const types = { name: "string", description: "string", version: "string", author: "string", category: "string", color: "string", icon: "string", notes: "string", repo: "string", entry: "string", hidden: "boolean" };
   for (const [k, t] of Object.entries(types)) {
     if (k in raw && raw[k] !== null && typeof raw[k] !== t) {
       warn(`${basename(file)} : "${k}" doit être de type ${t}. Le fichier entier sera ignoré.`);

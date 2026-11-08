@@ -29,6 +29,8 @@ pub struct AppEntry {
     /// URL `data:` d'une image, ou un emoji.
     pub icon: String,
     pub notes: String,
+    /// Dépôt GitHub (`owner/nom`) où chercher les nouvelles versions.
+    pub repo: String,
     pub size: u64,
     pub modified: u64,
     /// D'où viennent les infos ("sidecar", "html", "exe").
@@ -55,6 +57,7 @@ pub struct Detected {
     pub tags: Vec<String>,
     pub color: String,
     pub icon: String,
+    pub repo: String,
     pub sources: Vec<String>,
 }
 
@@ -72,6 +75,7 @@ struct Sidecar {
     color: Option<String>,
     icon: Option<String>,
     notes: Option<String>,
+    repo: Option<String>,
     hidden: Option<bool>,
 }
 
@@ -174,6 +178,7 @@ fn build(root: &Path, path: &Path, kind: &'static str, meta_file: &Path, folder_
         tags: app.tags.clone(),
         color: app.color.clone(),
         icon: app.icon.clone(),
+        repo: app.repo.clone(),
         sources: app.sources.clone(),
     };
     app.sidecar = serde_json::Value::Object(Default::default());
@@ -199,6 +204,9 @@ fn apply_sidecar(path: &Path, s: Sidecar, app: &mut AppEntry) {
     set(&mut app.category, s.category);
     set(&mut app.color, s.color);
     set(&mut app.notes, s.notes);
+    if let Some(repo) = s.repo.as_deref().and_then(crate::update::normalize_repo) {
+        app.repo = repo;
+    }
     if let Some(tags) = s.tags {
         app.tags = tags;
     }
@@ -270,6 +278,11 @@ fn read_html_meta(path: &Path, app: &mut AppEntry) {
             }
             "portal:color" | "theme-color" => app.color = content,
             "portal:notes" => app.notes = content,
+            "portal:repo" => {
+                if let Some(r) = crate::update::normalize_repo(&content) {
+                    app.repo = r
+                }
+            }
             "portal:icon" => {
                 if let Some(i) = resolve_icon(base, &content) {
                     app.icon = i

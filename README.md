@@ -23,7 +23,7 @@ https://github.com/user-attachments/assets/6ff1a0c2-4b54-4906-993f-a02df4cf1429
 
 ## At a glance
 
-- **One ~4 MB executable**: no installer, no account, **fully offline**. Nothing leaves your machine.
+- **One ~4 MB executable**: no installer, no account, **offline by default**. Nothing leaves your machine unless you turn on the optional update check (settings), which only contacts `api.github.com` to flag newer releases of the launcher and of apps that declare a `repo`. It never downloads or installs anything.
 - **Zero configuration**: point it at a folder and every app is described by its own metadata (HTML tags, exe version info, shortcut…).
 - **Built to launch fast**: instant search, favorites, launch counters, full keyboard navigation.
 - **Several themes**: Neon Arcade, Superbike, Enduro, 8-bit, Hextech, Summit.
@@ -85,12 +85,12 @@ In order of priority:
    {
      "name": "My App", "description": "…", "version": "1.2.0", "author": "Me",
      "category": "Tools", "tags": ["csv"], "color": "#00f0ff",
-     "icon": "🏍️", "notes": "…", "hidden": false, "entry": "app.html"
+     "icon": "🏍️", "notes": "…", "repo": "me/my-app", "hidden": false, "entry": "app.html"
    }
    ```
    `icon`: an emoji or an image file (`png`, `svg`, `ico`…). `entry`: folders only.
 2. **HTML tags**: `<title>`, favicon, `<meta name="description|author|version">`
-   and `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes">`.
+   and `<meta name="portal:category|portal:tags|portal:color|portal:icon|portal:notes|portal:repo">`.
 3. **Shortcuts**: a `.lnk` provides its description and icon (or its target's), a `.url` its address and icon; the name is the file name.
 4. **Exe version info**: description, version, company, comments + icon.
 

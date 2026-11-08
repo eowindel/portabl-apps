@@ -1,5 +1,6 @@
 mod scan;
 mod settings;
+mod update;
 
 use scan::AppEntry;
 use serde::{Deserialize, Serialize};
@@ -7,6 +8,7 @@ use serde_json::{Map, Value};
 use settings::{Settings, Stat};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
+use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
@@ -36,6 +38,7 @@ struct Prefs {
     browser_mode: Option<String>,
     browser_path: Option<String>,
     browser_args: Option<String>,
+    check_updates: Option<bool>,
 }
 
 fn now_ms() -> u64 {
@@ -62,6 +65,7 @@ fn update_prefs(prefs: Prefs, state: State<AppState>) -> Result<Settings, String
     if let Some(v) = prefs.browser_mode { s.browser_mode = v }
     if let Some(v) = prefs.browser_path { s.browser_path = v }
     if let Some(v) = prefs.browser_args { s.browser_args = v }
+    if let Some(v) = prefs.check_updates { s.check_updates = v }
     s.save()?;
     Ok(s.clone())
 }
@@ -210,8 +214,8 @@ fn open_apps_dir(state: State<AppState>) -> Result<(), String> {
 }
 
 /// Champs qu'on accepte d'écrire dans un .portal.json depuis l'éditeur.
-const META_FIELDS: [&str; 11] =
-    ["name", "description", "version", "author", "category", "tags", "color", "icon", "notes", "hidden", "entry"];
+const META_FIELDS: [&str; 12] =
+    ["name", "description", "version", "author", "category", "tags", "color", "icon", "notes", "repo", "hidden", "entry"];
 
 /// Enregistre les champs modifiés dans le .portal.json de l'appli.
 /// Un champ vide est retiré du fichier ; les champs inconnus déjà présents sont conservés ;
@@ -252,6 +256,15 @@ fn save_meta(path: String, fields: Map<String, Value>, state: State<AppState>) -
         if empty {
             obj.shift_remove(&key);
             continue;
+        }
+        if key == "repo" {
+            match value.as_str().and_then(update::normalize_repo) {
+                Some(repo) => {
+                    obj.insert(key, Value::String(repo));
+                    continue;
+                }
+                None => return Err("Dépôt GitHub invalide : attendu « propriétaire/nom »".into()),
+            }
         }
         if key == "entry" {
             let entry = value.as_str().unwrap_or_default();
@@ -353,6 +366,51 @@ fn about() -> About {
     }
 }
 
+/// Dernières releases GitHub du launcher et des applis qui déclarent un `repo`.
+/// Sans l'autorisation des réglages, rien ne part sur le réseau.
+#[tauri::command]
+async fn check_updates(force: bool, state: State<'_, AppState>) -> Result<UpdateReport, String> {
+    let (settings, dir) = {
+        let s = state.0.lock().unwrap();
+        if !s.check_updates {
+            return Err("Vérification des mises à jour désactivée dans les réglages".into());
+        }
+        (s.clone(), s.apps_dir())
+    };
+    let mut repos: BTreeSet<String> = scan::scan(&dir).into_iter().filter(|a| !a.repo.is_empty()).map(|a| a.repo).collect();
+    repos.insert(update::LAUNCHER_REPO.to_string());
+    let now = now_ms();
+    let (releases, error) = tauri::async_runtime::spawn_blocking(move || update::check(&settings, repos, force, now))
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut s = state.0.lock().unwrap();
+    s.update_cache = releases.clone();
+    s.save()?;
+    Ok(UpdateReport { launcher_repo: update::LAUNCHER_REPO, releases, error })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateReport {
+    launcher_repo: &'static str,
+    releases: HashMap<String, update::Release>,
+    /// Dernière erreur rencontrée (réseau coupé, limite GitHub…), pour l'afficher sans bloquer.
+    error: Option<String>,
+}
+
+/// Ouvre une page GitHub (page de release) dans le navigateur par défaut.
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !update::is_github_url(&url) {
+        return Err("Seules les pages github.com s'ouvrent depuis ici".into());
+    }
+    #[cfg(windows)]
+    let mut cmd = Command::new("explorer.exe");
+    #[cfg(unix)]
+    let mut cmd = Command::new("xdg-open");
+    cmd.arg(url).spawn().map(|_| ()).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 async fn pick_folder(app: tauri::AppHandle) -> Option<String> {
     app.dialog()
@@ -413,6 +471,8 @@ pub fn run() {
             reveal,
             open_apps_dir,
             pick_folder,
+            check_updates,
+            open_url,
             save_meta,
             pick_icon,
             about
