@@ -401,8 +401,10 @@ struct UpdateReport {
 /// Ouvre une page GitHub (page de release) dans le navigateur par défaut.
 #[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
-    if !update::is_github_url(&url) {
-        return Err("Seules les pages github.com s'ouvrent depuis ici".into());
+    // Liens du pied de page : adresses exactes, rien d'autre que GitHub en plus.
+    let footer_link = url == "https://casarou.com" || url == "mailto:contact@casarou.com";
+    if !update::is_github_url(&url) && !footer_link {
+        return Err("Seules les pages github.com, casarou.com et le contact s'ouvrent depuis ici".into());
     }
     #[cfg(windows)]
     let mut cmd = Command::new("explorer.exe");

@@ -3,6 +3,11 @@
 Toutes les évolutions notables de Porta[b]l Apps.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions en [SemVer](https://semver.org/lang/fr/).
 
+## [0.9.1] - 2026-11-09
+
+### Ajouté
+- Pied de page : liens vers casarou.com et contact@casarou.com, à côté de la licence.
+
 ## [0.9.0] - 2026-11-08
 
 ### Ajouté
